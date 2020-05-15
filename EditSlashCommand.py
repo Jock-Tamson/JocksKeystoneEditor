@@ -323,7 +323,7 @@ class SlashCommandEditor(KeystoneEditFrame):
         
 if (__name__ == "__main__"):
     win = tk.Tk()
-    target = SlashCommand(repr="+say <color #000000><bgcolor #FFFFFF75><border #FF0000><scale 1.0><duration 10>Yay!")
+    target = SlashCommand(repr="+say <color #000000><bgcolor #FFFFFF75><bordercolor #FF0000><scale 1.0><duration 10>Yay!")
     editor = SlashCommandEditor(win, target)
     s = ttk.Style()
     s.configure('My.TFrame', background='red')

@@ -13,7 +13,7 @@ class SlashCommand():
     REPEAT_STR = "+"
     COLOR_STR = "color"
     BACKGROUND_STR = "bgcolor"
-    BORDER_STR = "border"
+    BORDER_STR = "bordercolor"
     SCALE_STR = "scale"
     DURATION_STR = "duration"
 
@@ -88,7 +88,7 @@ class SlashCommand():
         #background transparency indicated by transparency in <bgcolor {ccode{transparency}>
         self.TextBackgroundTransparency = ""
 
-        #border color indicated by <border {ccode} in text>
+        #border color indicated by <bordercolor {code} in text>
         self.TextBorderColor = ""
 
         #scale indicated by <scale {factor}> in text

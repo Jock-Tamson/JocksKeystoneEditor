@@ -321,7 +321,7 @@ class EditBindWindow(tk.Toplevel):
 
 if (__name__ == "__main__"):
     win = tk.Tk()
-    target = Bind(repr="SHIFT+Y em Does this work?$$+say <color #000000><bgcolor #FFFFFF75><border #FF0000><scale 1.0><duration 10>Yay!")
+    target = Bind(repr="SHIFT+Y em Does this work?$$+say <color #000000><bgcolor #FFFFFF75><bordercolor #FF0000><scale 1.0><duration 10>Yay!")
     def callback(result, bind):
         print(result)
         print(bind)

@@ -18,11 +18,11 @@ import unittest
 class TestKeystoneUtils(unittest.TestCase):
 
     def test_ParseBacketedCodes(self):
-        input = "<color #000000><bgcolor #FFFFFF75> <border #FF0000><scale 1.0><duration 10>"
+        input = "<color #000000><bgcolor #FFFFFF75> <bordercolor #FF0000><scale 1.0><duration 10>"
         tests = [
                     ["color", "#000000"],
                     ["bgcolor", "#FFFFFF75"],
-                    ["border", "#FF0000"],
+                    ["bordercolor", "#FF0000"],
                     ["scale", "1.0"],
                     ["duration", "10"]
                 ]
@@ -115,7 +115,7 @@ class TestSlashCommand(unittest.TestCase):
         duration = "10"
         target = SlashCommand(name=name, text=text, color=color, background=background, transparency=transparency, border=border, scale=scale, duration=duration)
         actual = str(target)
-        expected = "say <color #000000><bgcolor #FFFFFF75><border #FF0000><scale 1.0><duration 10>Yay!"
+        expected = "say <color #000000><bgcolor #FFFFFF75><bordercolor #FF0000><scale 1.0><duration 10>Yay!"
         self.assertEqual(actual, expected)
 
     def test_FromString(self):
@@ -161,7 +161,7 @@ class TestSlashCommand(unittest.TestCase):
         border = "#FF0000"
         scale = "1.0"
         duration = "10"
-        target = SlashCommand(repr="say <color #000000><bgcolor #FFFFFF75><border #FF0000><scale 1.0><duration 10>Yay!")
+        target = SlashCommand(repr="say <color #000000><bgcolor #FFFFFF75><bordercolor #FF0000><scale 1.0><duration 10>Yay!")
         self.assertEqual(target.Name, name, "Did not parse name from formatting as expected")
         self.assertEqual(target.Text, text, "Did not parse text from formatting as expected")
         self.assertEqual(target.TextColor, color, "Did not parse color from formatting as expected")
