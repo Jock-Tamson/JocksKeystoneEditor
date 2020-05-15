@@ -133,6 +133,8 @@ def OnUploadFile():
         return
     filePath = os.path.abspath(editor.Model.FilePath)
     command = SlashCommand(name=LOAD_COMMAND, text="\"%s\"" % os.path.abspath(filePath))
+    win.clipboard_clear()
+    win.clipboard_append("/" + str(command))
     messagebox.showinfo("Upload to City of Heroes",  
         "The command:\n\n" +
         "/%s\n\n" % str(command) +
