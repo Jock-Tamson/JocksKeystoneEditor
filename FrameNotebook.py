@@ -21,7 +21,7 @@ class FrameNotebook(ttk.Notebook):
         self.Dirty = None
 
     def GetTabNameFromItem(self, item):
-        name = "." + self._name + "." + ReverseDictionaryLookup(self.children, item)
+        name = str(self) + "." + ReverseDictionaryLookup(self.children, item)
         return name
 
     def GetTabTextFromItem(self, item):

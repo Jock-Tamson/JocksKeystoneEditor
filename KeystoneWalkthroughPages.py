@@ -57,8 +57,8 @@ WALKTHROUGH = [
     "That little red x next to Unbind lets us delete this command.\n" +
     "Not the key bind, just this one command.\n" +
     "The inserts and move would let us add more or rearrange things.\n" +
-    "Try it out if you like.  We can always cancel\n" +
-    "Thing is that first thing that make a toon more than jabber and emote\n" +
+    "Try it out if you like.  We can always cancel\n\n" +
+    "You want to know that first thing that is more than jabber and emoting\n" +
     "stops the whole list running.  So if you put multiple powers on one key,\n" +
     "then it will only do the first that works.\n\n" +
     "Our first command is say, which won't do that.\n" +
@@ -71,12 +71,12 @@ WALKTHROUGH = [
     "Some commands use text. Others don't. Hopefully the description will tell.\n\n" +
     "Repeat Mode could use a little explaining...",
 
-    "Repeat mode is how often the command will run when you hit the key.\n" +
-    "Once is ... well once.  Repeat does it for as long as you hold the key.\n" +
-    "Toggle is over and over until you hit the key again.\n" +
+    "Repeat mode is how often the command will run when you hit the key.\n\n" +
+    "Once is ... well once.  Repeat does it for as long as you hold the key.\n\n" +
+    "Toggle is over and over until you hit the key again.\n\n" +
     "So use the forward command 'Once' and you would have to keep tappin' W to move.\n" +
     "Repeat is forward while you hold W like normal\n" +
-    "Toggle and you take off runnin' until you hit W again. See?\n" +
+    "Toggle and you take off runnin' until you hit W again. See?\n\n" +
     "Don't toggle your battle cry.  Nobody wants that.",
 
     "Down at the bottom we can just switch to editing the command strings direct\n" +
@@ -85,7 +85,7 @@ WALKTHROUGH = [
     "Below the text is all the stuff to make you talk pretty like me.\n" +
     "Let's look at that next.",
 
-    "We have color.  You can pick from the list or use the color button to customize.\n" +
+    "We have text color.  You can pick from the list or use the color button to customize.\n" +
     "Pick something classy like 'lightskyblue'\n" +
     "It formats the text so we can see what we are getting. Cool huh?\n" +
     "...but now that pretty blue isn't readable.\n\n" +
@@ -125,8 +125,8 @@ WALKTHROUGH = [
     "You can do cool tricks by having keys load files that bind other keys,\n" +
     "like having a key cycle through different powers each time you click it.\n" +
     "...but that's a whole other walkthrough.\n\n" +
-    "Play around however you want with the file.\n" +
-    "When you are ready, save or Save As from the File menu and let's upload these binds!",
+    "Click OK if you want to add this bind and add whatever else you want to the file.\n" +
+    "When you are ready, Save or Save As from the File menu and let's upload these binds!",
 
     "Back in the Game Commands menu, select Upload File.\n\n" +
     "Just like the download it copied the command to the clipboard for you.\n" +
@@ -146,6 +146,8 @@ WALKTHROUGH_END_PAGES = [
     ["https://github.com/Jock-Tamson/JocksKeystoneEditor"]
     ]
     ]
+
+WalkthroughWindow = None
 
 class KeystoneWalkthroughPages(KeystoneWizardPage):
 
@@ -177,18 +179,28 @@ class KeystoneWalkthroughPages(KeystoneWizardPage):
     def callback(self, url):
         webbrowser.open_new(url)
 
+def _onCloseWalkthroughWindow(wizard, *args):
+    global WalkthroughWindow
+    WalkthroughWindow = None
+
+def ShowIntroWalkthrough(parent):
+
+    global WalkthroughWindow
+    if (WalkthroughWindow == None):
+        WalkthroughWindow = KeystoneWizard(parent, title='Keystone Walkthrough', onClose = _onCloseWalkthroughWindow)
+        pages= []
+        for eachLine in WALKTHROUGH:
+            pages.append(KeystoneWalkthroughPages(WalkthroughWindow, text=eachLine))
+        for text, urls in WALKTHROUGH_END_PAGES:
+            pages.append(KeystoneWalkthroughPages(WalkthroughWindow, text=text, urls=urls))
+
+        WalkthroughWindow.LoadPages(pages)
+
 
 if (__name__ == "__main__"):
 
     win = tk.Tk()
 
-    wizard = KeystoneWizard(win, title='Keystone Walkthrough')
-    pages= []
-    for eachLine in WALKTHROUGH:
-        pages.append(KeystoneWalkthroughPages(wizard, text=eachLine))
-    for text, urls in WALKTHROUGH_END_PAGES:
-        pages.append(KeystoneWalkthroughPages(wizard, text=text, urls=urls))
-
-    wizard.LoadPages(pages)
+    ShowIntroWalkthrough(win)
 
     tk.mainloop()

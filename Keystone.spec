@@ -23,7 +23,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas + [
               ('Resources/Keystone.ico', 'Resources/Keystone.ico', 'DATA'),
-              ('Resources/LeadBrick.jpg', 'Resources/LeadBrick.jpg', 'DATA')
+              ('Resources/LeadBrick1.jpg', 'Resources/LeadBrick1.jpg', 'DATA')
               ],
           [],
           name='Keystone',

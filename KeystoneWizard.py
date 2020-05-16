@@ -6,7 +6,7 @@ from KeystoneWizardPage import KeystoneWizardPage, KeystoneWizardPageTest
 
 class KeystoneWizard(tk.Toplevel):
 
-    def __init__(self, parent, title = None, icon = None, *args, **kwargs):
+    def __init__(self, parent, title = None, icon = None, onBack = None, onNext = None, onClose = None, *args, **kwargs):
 
         #initialize
         tk.Toplevel.__init__(self, parent, *args, **kwargs)
@@ -27,6 +27,11 @@ class KeystoneWizard(tk.Toplevel):
 
         self.PageIndex = tk.IntVar(value = 0)
         self.PageIndex.trace("w", self.ShowPage)
+
+        #callbacks
+        self.OnBackCallback = onBack
+        self.OnNexCallback = onNext
+        self.OnCloseCallback = onClose
 
         #setup grid
         self.rowconfigure(0, weight=1, minsize=200)
@@ -126,9 +131,9 @@ class KeystoneWizard(tk.Toplevel):
         self.ShowNext.set(page.AllowNext.get())
         self.ShowClose.set(page.AllowClose.get())
 
-    def _onButton(self, command, allowVar, showVar, indexChange):
-        if (command != None):
-            command(self, self.CurrentPage)
+    def _onButton(self, callback, pageCallback, allowVar, showVar, indexChange):
+        if (pageCallback != None):
+            pageCallback(self, self.CurrentPage)
         allow = allowVar.get()
         showVar.set(allow)
         index = self.PageIndex.get() + indexChange 
@@ -136,15 +141,17 @@ class KeystoneWizard(tk.Toplevel):
             index = self.PageCount() -1
         elif(index < 0):
             index = 0
-        self.PageIndex.set(index)
+        if (index != self.PageIndex.get()):
+            self.PageIndex.set(index)
+            callback(self)
 
     def OnBack(self, *args):
         page = self.CurrentPage
-        self._onButton(page.OnBack, page.AllowBack, self.ShowBack, -1)
+        self._onButton(self.OnBackCallback, page.OnBack, page.AllowBack, self.ShowBack, -1)
 
     def OnNext(self, *args):
         page = self.CurrentPage
-        self._onButton(page.OnNext, page.AllowClose, self.ShowClose, 1)
+        self._onButton(self.OnNexCallback, page.OnNext, page.AllowClose, self.ShowClose, 1)
 
     def OnClose(self, *args):
         page = self.CurrentPage
@@ -152,6 +159,8 @@ class KeystoneWizard(tk.Toplevel):
             page.OnClose(self)
         if (page.AllowClose.get()):
             self.destroy()
+        if (self.OnCloseCallback != None):
+            self.OnCloseCallback(self)
         
         
 if (__name__ == "__main__"):
