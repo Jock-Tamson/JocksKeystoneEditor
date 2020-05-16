@@ -118,6 +118,23 @@ class TestSlashCommand(unittest.TestCase):
         expected = "say <color #000000><bgcolor #FFFFFF75><bordercolor #FF0000><scale 1.0><duration 10>Yay!"
         self.assertEqual(actual, expected)
 
+    def test_NamedColorAndTransparencyInText(self):
+
+        #formatted text
+        name = "say"
+        text = "Yay!"
+        color = "#000000"
+        background = "white"
+        transparency = "75"
+        border = "#FF0000"
+        scale = "1.0"
+        duration = "10"
+        target = SlashCommand(name=name, text=text, color=color, background=background, transparency=transparency, border=border, scale=scale, duration=duration)
+        actual = str(target)
+        expected = "say <color #000000><bgcolor #FFFFFF75><bordercolor #FF0000><scale 1.0><duration 10>Yay!"
+        self.assertEqual(actual, expected)
+
+
     def test_FromString(self):
         target = SlashCommand(repr="say This test passed")
         expected = "say"

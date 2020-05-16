@@ -1,5 +1,6 @@
 from KeystoneUtils import RemoveOuterQuotes
 from KeystoneUtils import ParseBracketedCodes
+from KeystoneUtils import STANDARD_COLOR_DICTIONARY
 import os
 
 
@@ -130,7 +131,18 @@ class SlashCommand():
         if (self.TextBorderColor != ""):
             text = formatFormat % (self.BORDER_STR, self.TextBorderColor) + text
         if (self.TextBackgroundColor != ""):
-            text = formatFormat % (self.BACKGROUND_STR, self.TextBackgroundColor + self.TextBackgroundTransparency) + text
+            color = self.TextBackgroundColor
+            transparency = self.TextBackgroundTransparency 
+
+            if ((not color.startswith("#")) and (str.strip(transparency) != "")):
+                #named color with transparency
+                try:
+                    color = STANDARD_COLOR_DICTIONARY[self.TextBackgroundColor]
+                except KeyError:
+                    transparency = ""
+            
+            text = formatFormat % (self.BACKGROUND_STR, color + transparency) + text
+
         if (self.TextColor != ""):
             text = formatFormat % (self.COLOR_STR, self.TextColor) + text
 
