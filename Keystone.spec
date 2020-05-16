@@ -21,7 +21,10 @@ exe = EXE(pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
-          a.datas + [('Resources/Keystone.ico', 'Resources/Keystone.ico', 'DATA')],
+          a.datas + [
+              ('Resources/Keystone.ico', 'Resources/Keystone.ico', 'DATA'),
+              ('Resources/LeadBrick.jpg', 'Resources/LeadBrick.jpg', 'DATA')
+              ],
           [],
           name='Keystone',
           debug=False,
