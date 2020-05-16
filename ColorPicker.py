@@ -9,9 +9,18 @@ class ColorPicker(ttk.Frame):
     def choosecolor(self):
         choice = askcolor()[1]
         if (choice != None):
-            color = str.upper(choice)
+            self.ColorEntryText.set(choice)    
+
+    def lookupcolor(self, *args):
+        color = self.ColorEntryText.get() 
+        if (color.startswith('#')):
+            color = str.upper(color)
             color = ReverseColorLookup(color)
-            self.ColorEntryText.set(color)       
+        self._colorEntryText.set(color)  
+
+    def setcolor(self, *args):
+        color = self._colorEntryText.get()
+        self.ColorEntryText.set(color)
 
     def __init__(self, parent):
         ttk.Frame.__init__(self, parent)
@@ -22,8 +31,11 @@ class ColorPicker(ttk.Frame):
         container = ttk.Frame(self)
         container.pack()
 
+        self._colorEntryText = tk.StringVar(self)
+        self._colorEntryText.trace("w", self.setcolor)
         self.ColorEntryText = tk.StringVar(self)
-        self.Combo = ttk.Combobox(container, textvariable=self.ColorEntryText,values=" ".join(STANDARD_COLOR_DICTIONARY.keys()))
+        self.ColorEntryText.trace("w", self.lookupcolor)
+        self.Combo = ttk.Combobox(container, textvariable=self._colorEntryText,values=" ".join(STANDARD_COLOR_DICTIONARY.keys()))
         self.Combo.grid(row=0, column=0)
 
         btn = ttk.Button(container, text="Color", command=self.choosecolor, width=5)
