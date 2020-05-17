@@ -1,7 +1,7 @@
 from Bind import Bind
 import os
 
-from KeystoneUtils import GetFileName, GetUniqueFilePath
+from KeystoneUtils import GetFileName, GetUniqueFilePath, MatchKeyName
 from DefaultKeyBindings import DEFAULT_KEY_BINDINGS, DEFAULT_BIND, DEFAULT_COMMAND
 from SlashCommand import SlashCommand
 
@@ -73,7 +73,12 @@ class BindFile():
                     command.SetTargetFile(newTargetPath)
 
     def GetBindForKey(self, key, chord = ""):
-        return [b for b in self.Binds if ((str.upper(b.Key) == str.upper(key)) and ((chord == None) or (str.upper(b.Chord) == str.upper(chord))))]
+        quickMatch = [b for b in self.Binds if ((b.Key == key) and ((chord == None) or (b.Chord == chord)))]
+        if (len(quickMatch) > 0):
+            return quickMatch
+        dummyForConversion = Bind(key=key, chord=chord)
+        defaultedName = dummyForConversion.GetKeyWithChord(defaultNames=True)
+        return [b for b in self.Binds if (defaultedName == b.GetKeyWithChord(defaultNames=True))]
 
 
 #Load a BindFile object from a text file
