@@ -117,4 +117,36 @@ def GetResourcePath(relativePath)->str:
         return None
 
     return path
+
+def NameForMatch(name)->str:
+
+    if (name == None):
+        return None
+
+    #ignore whitespace
+    name = name.strip()
+
+    #don't match blank strings
+    if (name == ""):
+        return None
+    
+    #case doesn't matter
+    name = str.upper(name)
+
+    #underscores don't matter
+    if (len(name) > 1):
+        name = name.replace("_", "")
+
+    return name
+
+def MatchKeyName(compName, nameList)->[str, str, str]:
+    matchName = NameForMatch(compName)
+    if (matchName == None):
+        return None
+    matches = [[name, alt_name, desc] for name, alt_name, desc in nameList if ((matchName == NameForMatch(name)) or (matchName == NameForMatch(alt_name)))]
+    if (len(matches) > 0):
+        return matches[0]
+    else:
+        return None
+
     

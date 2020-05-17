@@ -3,11 +3,12 @@ from Bind import Bind
 from BindFile import BindFile
 from BindFile import ReadBindsFromFile
 from BindFile import GetDefaultBindForKey
-from KeystoneUtils import ParseBracketedCodes, AverageRGBValues, GetFileName, GetUniqueFilePath, ReverseDictionaryLookup, RemoveOuterQuotes
+from KeystoneUtils import ParseBracketedCodes, AverageRGBValues, GetFileName, GetUniqueFilePath, ReverseDictionaryLookup, RemoveOuterQuotes, MatchKeyName
 from BindFileCollection import BindFileCollection
 from BindFileCollection import GetKeyChains
 from Keylink import Keylink
 from Keychain import Keychain
+from KeyNames import KEY_NAMES, CHORD_KEYS
 
 from os import remove
 from os import path
@@ -75,6 +76,25 @@ class TestKeystoneUtils(unittest.TestCase):
         expected = "two"
         actual = ReverseDictionaryLookup(target, 2)
         self.assertEqual(actual, expected)
+
+    def test_MatchKeyName(self):
+
+        #match key
+        target = ';'
+        expected = [';','SEMICOLON','']
+        actual = MatchKeyName(target, KEY_NAMES)
+        self.assertEqual(actual, expected, 'Failed to match ;')
+
+        #match alt key name
+        target = 'SEMICOLON'
+        actual = MatchKeyName(target, KEY_NAMES)
+        self.assertEqual(actual, expected, 'Failed to match SEMICOLON')
+
+        #fail to match garbage
+        target = 'garbage'
+        expected = None
+        actual = MatchKeyName(target, KEY_NAMES)
+        self.assertEqual(actual, expected, 'Found a match to garbage')
 
 class TestSlashCommand(unittest.TestCase):
 
@@ -288,6 +308,32 @@ class TestBind(unittest.TestCase):
         target = Bind(repr = "MouseChord \"powexec_name Hover$$bind_load_file \".\\TestReferences\\Jock Tamson\\MouseChord2.txt\"\"")
         self.assertEqual(target.IsLoadFileBind(), True, "Unexpectedly did not set IsLoadFileBind")
 
+    def test_GetKeyWithChord(self):
+
+        target = Bind(repr = "PERIOD \"say This test passed\"")
+        expected = "PERIOD"
+        actual = target.GetKeyWithChord()
+        self.assertEqual(actual, expected, 'Did not get expected non-chorded key')
+        expected = "."
+        actual = target.GetKeyWithChord(defaultNames=True)
+        self.assertEqual(actual, expected, 'Did not get expected defaulted non-chorded key')
+       
+        target = Bind(repr = "shift+PERIOD \"say This test passed\"")
+        expected = "shift+PERIOD"
+        actual = target.GetKeyWithChord()
+        self.assertEqual(actual, expected, 'Did not get expected chorded key')
+        expected = "SHIFT+."
+        actual = target.GetKeyWithChord(defaultNames=True)
+        self.assertEqual(actual, expected, 'Did not get expected defaulted chorded key')
+       
+        target = Bind(repr = "whoknows+whatthisis \"say This test passed\"")
+        expected = "whoknows+whatthisis"
+        actual = target.GetKeyWithChord()
+        self.assertEqual(actual, expected, 'Did not get expected chorded nonsense')
+        actual = target.GetKeyWithChord(defaultNames=True)
+        self.assertEqual(actual, expected, 'Did not get expected defaulted chorded nonsense')
+
+
 class TestBindFile(unittest.TestCase):
 
     def test__repr__(self):
@@ -378,7 +424,8 @@ class TestBindFile(unittest.TestCase):
         expected_2 = "2 \"powexec_slot 2\""
         expected_CTRL_2 = "CTRL+2 \"powexec_alt2slot 2\""
         expected_SHIFT_2 = "SHIFT+2 \"team_select 2\""
-        input = "%s\n%s\n%s\n" % (expected_2, expected_CTRL_2, expected_SHIFT_2)
+        expected_Alt_Names = "shift+period \"em this test passed\""
+        input = "%s\n%s\n%s\n%s\n" % (expected_2, expected_CTRL_2, expected_SHIFT_2, expected_Alt_Names)
         target = BindFile(repr=input)
         actual = target.GetBindForKey(key = "2")
         self.assertEqual(1, len(actual))
@@ -391,6 +438,9 @@ class TestBindFile(unittest.TestCase):
         self.assertEqual(expected_SHIFT_2, str(actual[0]))
         actual = target.GetBindForKey(key = "A")
         self.assertEqual(0, len(actual))
+        actual = target.GetBindForKey(key=".", chord="SHIFT")
+        self.assertEqual(1, len(actual))
+        self.assertEqual(expected_Alt_Names, str(actual[0]))
 
     def test_GetDefaultBindForKey(self):
         expected_2 = "2 \"powexec_slot 2\""

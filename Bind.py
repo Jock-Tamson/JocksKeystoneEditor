@@ -1,5 +1,6 @@
 from SlashCommand import SlashCommand
-from KeystoneUtils import RemoveOuterQuotes
+from KeystoneUtils import RemoveOuterQuotes, MatchKeyName
+from KeyNames import KEY_NAMES, CHORD_KEYS
 
 #object for a keybind of 1 or more commands
 class Bind():
@@ -50,6 +51,11 @@ class Bind():
         else:
             self.Parse(repr=repr)
 
+        self._lastKey = None
+        self._lastChord = None
+        self._defaultedKey = self.GetDefaultedKeyName()
+        self._defaultedChord = self.GetDefaultedChordName()
+
     def IsLoadFileBind(self)->bool:
         return (self.GetLoadFileCommands().__len__() > 0)
 
@@ -59,12 +65,39 @@ class Bind():
         else:
             return [p for p in self.Commands if p.IsLoadFileCommand() ]
 
-    def GetKeyWithChord(self):
-        if (self.Chord == ""):
-            key = self.Key
+    def GetDefaultedKeyName(self)->str:
+        if (self._lastKey != self.Key):
+            self._lastKey = self.Key
+            match = MatchKeyName(self.Key, KEY_NAMES)
+            if (match == None):
+                self._defaultedKey = self.Key
+            else:
+                self._defaultedKey =  match[0]
+        return self._defaultedKey
+
+    def GetDefaultedChordName(self)->str:
+        if (self._lastChord != self.Chord):
+            self._lastChord = self.Chord
+            match = MatchKeyName(self.Chord, CHORD_KEYS)
+            if (match == None):
+                self._lastChord = self.Chord
+            else:
+                self._lastChord =  match[0]
+        return self._lastChord
+
+
+    def GetKeyWithChord(self, defaultNames = False):
+        if (defaultNames):
+            key = self.GetDefaultedKeyName()
+            chord = self.GetDefaultedChordName()
         else:
-            key = "%s+%s" % (self.Chord, self.Key)
-        return key
+            key = self.Key
+            chord = self.Chord
+        if (chord == ""):
+            result = key
+        else:
+            result = "%s+%s" % (chord, key)
+        return result
 
     def GetCommands(self):
         if (self.Commands == None):
