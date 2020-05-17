@@ -181,7 +181,7 @@ class BindEditor(KeystoneEditFrame):
         self._lockKey = lockKey
 
         #layout grid
-        self.columnconfigure(0, weight=0, minsize='205')
+        self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=0)
         self.columnconfigure(2, weight=1)
         self.rowconfigure(0, weight=1)
@@ -189,6 +189,8 @@ class BindEditor(KeystoneEditFrame):
         #add controls
         
         self.KeyFrame = KeystoneFrame(self)
+        self.KeyFrame.columnconfigure(1, weight=1)
+        self.KeyFrame.columnconfigure(2, weight=0)
         self.KeyFrame.rowconfigure(4, weight=1)
 
         self.CommandsFrame=KeystoneFrame(self)
@@ -214,10 +216,10 @@ class BindEditor(KeystoneEditFrame):
         self.Key = tk.StringVar()
         if (lockKey):
             keyValue = KeystoneLabel(self.KeyFrame, anchor='nw', textvariable=self.Key, width=5)
-            keyValue.grid(row=1, column=1, sticky="nw", padx="3", pady="3")
+            keyValue.grid(row=1, column=1, sticky="nsew", padx="3", pady="3")
         else:
             keyBox = KeystoneKeyCombo(self.KeyFrame, textvariable=self.Key, values=" ".join([ c[0] for c in KEY_NAMES]))
-            keyBox.grid(row=1, column=1, sticky="nw", padx="3", pady="3")
+            keyBox.grid(row=1, column=1, sticky="nsew", padx="3", pady="3")
         self.Key.trace("w", self.SelectKey)
         self.Key.trace("w", self.SetDirty)
         
@@ -231,10 +233,10 @@ class BindEditor(KeystoneEditFrame):
         self.Chord = tk.StringVar()
         if (lockKey):
             chordValue = KeystoneLabel(self.KeyFrame, anchor='nw', textvariable=self.Chord, width=5)
-            chordValue.grid(row=3, column=1, sticky="nw", padx="3", pady="3")
+            chordValue.grid(row=3, column=1, sticky="nsew", padx="3", pady="3")
         else:
             chordBox = KeystoneKeyCombo(self.KeyFrame, textvariable=self.Chord, values=" ".join([ c[0] for c in CHORD_KEYS]))
-            chordBox.grid(row=3, column=1, sticky="n", padx="3", pady="3")
+            chordBox.grid(row=3, column=1, sticky="nsew", padx="3", pady="3")
         self.Chord.trace("w", self.SelectChord)
         self.Chord.trace("w", self.SetDirty)
         
@@ -321,7 +323,7 @@ class EditBindWindow(tk.Toplevel):
 
 if (__name__ == "__main__"):
     win = tk.Tk()
-    target = Bind(repr="SHIFT+Y em Does this work?$$+say <color #000000><bgcolor #FFFFFF75><bordercolor #FF0000><scale 1.0><duration 10>Yay!")
+    target = Bind(repr="CONTROL+JOYSTICK2_RIGHT em Does this work?$$+say <color #000000><bgcolor #FFFFFF75><bordercolor #FF0000><scale 1.0><duration 10>Yay!")
     def callback(result, bind):
         print(result)
         print(bind)
