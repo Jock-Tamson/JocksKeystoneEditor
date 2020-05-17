@@ -70,6 +70,7 @@ class EditBindFile(KeystoneEditFrame):
             if (self.List.get()):
                 binds = [Bind(repr=bind.__repr__()) for bind in bindFile.Binds]
             else:
+                #check for and load each permutation of known keys and chords
                 chords = ['']
                 for chord, altname, desc in CHORD_KEYS:
                     dummy = altname
@@ -82,6 +83,11 @@ class EditBindFile(KeystoneEditFrame):
                         keyBinds = bindFile.GetBindForKey(key, chord)
                         if (len(keyBinds) > 0):
                             binds.append(Bind(repr=keyBinds[0].__repr__()))
+                #load anything in the file we didn't match at the end
+                for bind in bindFile.Binds:
+                    loaded = [b for b in binds if (bind.GetKeyWithChord(defaultNames=True) == b.GetKeyWithChord(defaultNames = True))]
+                    if (len(loaded) == 0):
+                        binds.append(Bind(repr=bind.__repr__()))
 
             self.view.Load(BindListItem, binds, Bind(repr=DEFAULT_BIND))
             self.Model = bindFile
