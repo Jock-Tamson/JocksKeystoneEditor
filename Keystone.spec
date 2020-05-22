@@ -3,7 +3,7 @@
 block_cipher = None
 
 
-a = Analysis(['MainWindow.py'],
+a = Analysis(['__main__.py'],
              pathex=['C:\\Users\\Jock_\\Documents\\GitHub\\Keystone'],
              binaries=[],
              datas=[],
