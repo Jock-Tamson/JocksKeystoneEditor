@@ -34,6 +34,8 @@ class BindFile():
         self.FilePath = filePath
 
     def __repr__(self):
+        if (self.Binds == None):
+            return ''
         return self.LINE_SEPARATOR.join([str(b) for b in self.Binds])
 
     #Overwrite or create a file from the binds in the object
@@ -53,6 +55,8 @@ class BindFile():
         self.FilePath = filePath
 
     def GetLoadFileBinds(self):
+        if (self.Binds == None):
+            return []
         return [b for b in self.Binds if b.IsLoadFileBind()]
 
     def RepointFilePaths(self, newFilePath: str, overwrite: bool = False):
@@ -77,6 +81,8 @@ class BindFile():
                     command.SetTargetFile(newTargetPath)
 
     def GetBindForKey(self, key, chord = ""):
+        if (self.Binds == None):
+            return []
         quickMatch = [b for b in self.Binds if ((b.Key == key) and ((chord == None) or (b.Chord == chord)))]
         if (len(quickMatch) > 0):
             return quickMatch
@@ -99,9 +105,9 @@ def NewBindFile(defaults: bool = False) -> BindFile:
     
     if (defaults):
         repr = DEFAULT_KEY_BINDINGS
+        return BindFile(repr=repr)
     else:
-        repr = DEFAULT_BIND
-    return BindFile(repr=repr)
+        return BindFile()
 
 def GetDefaultBindForKey(key, chord = "") -> Bind:
     bindFile = NewBindFile(defaults=True)

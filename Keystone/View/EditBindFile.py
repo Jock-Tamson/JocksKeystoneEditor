@@ -55,7 +55,8 @@ class BindListItem(KeystoneEditFrame):
 class EditBindFile(KeystoneEditFrame):
 
     def ShowSaveButtons(self, *args):
-        
+        if (self.Model == None):
+            return
         self.SaveButton.grid(row=0, column=1, sticky='nse')
         if (self.Model.FilePath != None):
             self.CancelButton.grid(row=0, column=2, sticky='nse')
@@ -67,30 +68,33 @@ class EditBindFile(KeystoneEditFrame):
     def Load(self, bindFile):
         self.Loading = True
         try:
-            binds = []
-            if (self.List.get()):
-                binds = [Bind(repr=bind.__repr__()) for bind in bindFile.Binds]
-            else:
-                #check for and load each permutation of known keys and chords
-                chords = ['']
-                for chord, altname, desc in CHORD_KEYS:
-                    dummy = altname
-                    dummy = desc
-                    chords.append(chord)
-                for key, altname, desc in KEY_NAMES:
-                    dummy = altname
-                    dummy = desc
-                    for chord in chords:
-                        keyBinds = bindFile.GetBindForKey(key, chord)
-                        if (len(keyBinds) > 0):
-                            binds.append(Bind(repr=keyBinds[0].__repr__()))
-                #load anything in the file we didn't match at the end
-                for bind in bindFile.Binds:
-                    loaded = [b for b in binds if (bind.GetKeyWithChord(defaultNames=True) == b.GetKeyWithChord(defaultNames = True))]
-                    if (len(loaded) == 0):
-                        binds.append(Bind(repr=bind.__repr__()))
+            if (bindFile.Binds != None):
 
-            self.view.Load(BindListItem, binds, Bind(repr=DEFAULT_BIND))
+                binds = []
+                if (self.List.get()):
+                    binds = [Bind(repr=bind.__repr__()) for bind in bindFile.Binds]
+                else:
+                    #check for and load each permutation of known keys and chords
+                    chords = ['']
+                    for chord, altname, desc in CHORD_KEYS:
+                        dummy = altname
+                        dummy = desc
+                        chords.append(chord)
+                    for key, altname, desc in KEY_NAMES:
+                        dummy = altname
+                        dummy = desc
+                        for chord in chords:
+                            keyBinds = bindFile.GetBindForKey(key, chord)
+                            if (len(keyBinds) > 0):
+                                binds.append(Bind(repr=keyBinds[0].__repr__()))
+                    #load anything in the file we didn't match at the end
+                    for bind in bindFile.Binds:
+                        loaded = [b for b in binds if (bind.GetKeyWithChord(defaultNames=True) == b.GetKeyWithChord(defaultNames = True))]
+                        if (len(loaded) == 0):
+                            binds.append(Bind(repr=bind.__repr__()))
+
+                self.view.Load(BindListItem, binds, Bind(repr=DEFAULT_BIND))
+
             self.Model = bindFile
 
         finally:
@@ -110,6 +114,8 @@ class EditBindFile(KeystoneEditFrame):
             replaceItem = None
             newKey = bind.Key
             newChord = bind.Chord
+            if (self.view.Items == None):
+                self.view.Items = []
 
             #find place in list
             chords = ['']
@@ -151,6 +157,8 @@ class EditBindFile(KeystoneEditFrame):
             self.Editor = EditBindWindow(self, self.NewBindCallback)
 
     def Get(self) -> BindFile:       
+        if (self.view.Items == None):
+            return []
         self.Model.Binds = [item.Item.Bind for item in self.view.Items if item.Item.Bind.Commands != None]
         return self.Model
 
