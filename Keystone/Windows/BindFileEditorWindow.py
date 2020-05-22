@@ -44,10 +44,14 @@ class BindFileEditorWindow(tk.Tk):
             finally:
                 self.config(cursor="")
 
-    def SetTabName(self):
-        editor = self.Notebook.SelectedFrame()
+    def SetTabName(self, editor = None):
         if (editor == None):
-            return
+            editor = self.Notebook.SelectedFrame()
+            if (editor == None):
+                return
+        else:
+            tab = self.Notebook.GetTabNameFromItem(editor)
+            self.Notebook.select(tab)
         if (editor.Model == None):
             self.Notebook.RemoveSelectedFrame()
         else:
@@ -67,19 +71,20 @@ class BindFileEditorWindow(tk.Tk):
     def OnFileNewDefaults(self):
         self.NewTab("default")
 
-    def OnFileSaveAll(self):
+    def OnSaveCallback(self, editor, *args):
+        self.SetTabName(editor = editor)
+
+    def OnFileSave(self):
         editor = self.Notebook.SelectedFrame()
         if (editor == None):
             return
         editor.Save()
-        self.SetTabName()
 
     def OnFileSaveAs(self):
         editor = self.Notebook.SelectedFrame()
         if (editor == None):
             return
         editor.Save(promptForPath=True)
-        self.SetTabName()
 
     def CancelFromSavePrompt(self)->bool:
         editor = self.Notebook.SelectedFrame()
@@ -197,7 +202,7 @@ class BindFileEditorWindow(tk.Tk):
         self.AddCommand(menu=fileMenu, frame=speedBar, label="Open", command=self.OnFileOpen)
         self.AddCommand(menu=fileMenu, frame=speedBar, label="New (Empty)", command=self.OnFileNew)
         self.AddCommand(menu=fileMenu, frame=speedBar, label="New (Defaults)", command=self.OnFileNewDefaults)
-        self.AddCommand(menu=fileMenu, frame=speedBar, label="Save", command=self.OnFileSaveAll)
+        self.AddCommand(menu=fileMenu, frame=speedBar, label="Save", command=self.OnFileSave)
         self.AddCommand(menu=fileMenu, frame=speedBar, label="Save As...", command=self.OnFileSaveAs)
         self.AddCommand(menu=fileMenu, frame=speedBar, label="Close", command=self.OnFileClose)
         menu.add_cascade(label="File", menu=fileMenu)
@@ -223,7 +228,7 @@ class BindFileEditorWindow(tk.Tk):
         walkthroughButton.grid()
         self.FirstFrame.pack(fill=tk.BOTH, expand=True, side=tk.TOP)
 
-        self.Notebook = FrameNotebook(self.FirstFrame, EditBindFile, None)
+        self.Notebook = FrameNotebook(self.FirstFrame, EditBindFile, [None, False, False, self.OnSaveCallback])
         self.ShowingNotebook = False
 
         win.config(menu=menu, width=800, height=400)

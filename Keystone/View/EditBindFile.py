@@ -56,8 +56,8 @@ class EditBindFile(KeystoneEditFrame):
 
     def ShowSaveButtons(self, *args):
         
+        self.SaveButton.grid(row=0, column=1, sticky='nse')
         if (self.Model.FilePath != None):
-            self.SaveButton.grid(row=0, column=1, sticky='nse')
             self.CancelButton.grid(row=0, column=2, sticky='nse')
 
     def HideSaveButtons(self, *args):
@@ -155,8 +155,14 @@ class EditBindFile(KeystoneEditFrame):
         return self.Model
 
     def OnSave(self, *args):
+        if ((self.Model.FilePath == None) or (self.Model.FilePath == '')):
+            filePath = self.PromptForFilePath()
+            if (filePath == ''):
+                return        
         self.DoWork(target=self._write)
         self.SetClean(self)
+        if (self.OnSaveCallback != None):
+            self.OnSaveCallback(self)
     
     def OnCancel(self, *args):
         self.Load(self.Model)
@@ -199,24 +205,28 @@ class EditBindFile(KeystoneEditFrame):
         self.Load(file)
         self.SetDirty(self)
 
+    def PromptForFilePath(self)->str:
+        if (self.Model == None):
+            return ''
+        options = {}
+        options['initialfile'] = "keybinds.txt"
+        options['title'] = "Save Keybind File As"
+        options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
+        options['defaultextension'] = "txt"
+        filePath = filedialog.asksaveasfilename(**options)
+        if (filePath != ''):
+            self.Model.FilePath = filePath
+            self.PathLabel.configure(text=self.Model.FilePath)
+
+        return filePath
+
     def Save(self, promptForPath: bool = False):
         if (self.Model == None):
             return
-        currentFilePath = self.Model.FilePath
-        if ( promptForPath or (currentFilePath == None)):        
-            options = {}
-            options['initialfile'] = "keybinds.txt"
-            options['title'] = "Save Keybind File As"
-            options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
-            options['defaultextension'] = "txt"
-            filePath = filedialog.asksaveasfilename(**options)
+        if (promptForPath):
+            filePath = self.PromptForFilePath()
             if (filePath == ''):
                 return
-        else:
-            filePath = currentFilePath
-        
-        self.Model.FilePath = filePath
-        self.PathLabel.configure(text=filePath)
         self.OnSave()
 
     def AddUploadBind(self, *args):
@@ -245,7 +255,7 @@ class EditBindFile(KeystoneEditFrame):
             self.Editor = EditBindWindow(self, self.NewBindCallback, bind=bind, dirty = dirty)
 
 
-    def __init__(self, parent, bindFile: BindFile = None, list = False, showUploadBindButton = False):
+    def __init__(self, parent, bindFile: BindFile = None, list = False, showUploadBindButton = False, onSaveCallback = None):
         KeystoneEditFrame.__init__(self, parent) 
 
         self.OnSetDirty.append(self.ShowSaveButtons)
@@ -297,6 +307,8 @@ class EditBindFile(KeystoneEditFrame):
         self.List.set(list)
 
         self.Editor = None
+
+        self.OnSaveCallback = onSaveCallback
 
         if (bindFile != None):
             self.Load(bindFile)
