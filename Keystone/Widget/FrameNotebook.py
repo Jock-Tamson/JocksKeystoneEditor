@@ -46,9 +46,17 @@ class FrameNotebook(ttk.Notebook):
         self._add_or_remove_asterisk(args[0], True)
         self.Dirty = True
 
+    def _areDirtyFrames(self):
+        if (self.Items == None):
+            return False
+        elif (len([p for p in self.Items if p.Dirty.get()]) == 0):
+            return False
+        else:
+            return True
+
     def CleanFrame(self, *args):
         self._add_or_remove_asterisk(args[0], False)
-        if (len([p for p in self.children.items() if p[1].Dirty.get()]) == 0):
+        if (not self._areDirtyFrames()):
             self.Dirty = False
 
     def AddFrame(self, args, label):
@@ -80,6 +88,8 @@ class FrameNotebook(ttk.Notebook):
         self.Items.remove(item)
         if len(self.Items) == 0:
             self.Items = None
+        if (not self._areDirtyFrames()):
+            self.Dirty = False
         self.forget(self.select())
 
     def SelectedFrame(self): 

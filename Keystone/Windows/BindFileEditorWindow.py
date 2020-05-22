@@ -164,8 +164,9 @@ class BindFileEditorWindow(tk.Tk):
         if (self.Notebook.Dirty == True):
             response = messagebox.askyesnocancel("Edited Files", "Save all changes before closing?")
             if (response):
-                for editor in self.Notebook.children.items():
-                    editor.Save()
+                if (self.Notebook.Items != None):        
+                    for editor in self.Notebook.Items:
+                        editor.Save()
             elif(response == None):
                 return
         self.destroy()
