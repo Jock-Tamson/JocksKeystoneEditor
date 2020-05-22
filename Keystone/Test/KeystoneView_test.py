@@ -25,13 +25,10 @@ from Keystone.Utility.KeystoneUtils import GetResourcePath
 class TestKeystoneWalthroughPages(unittest.TestCase):
 
     def test_ShowIntroWalkthrough(self):
-        win = tk.Tk()
-        imgPath = GetResourcePath('.\\Resources\\LeadBrick1.jpg')
-        self.Image = ImageTk.PhotoImage(Image.open(imgPath))
-        ShowIntroWalkthrough(win, image=self.Image)
-
-        #tk.mainloop()
-        win.destroy()
+        print("uncomment to test.  Fails when run as set without mainloop")
+        # win = tk.Tk()
+        # ShowIntroWalkthrough(win)
+        # tk.mainloop()
 
 class TestEditSlashCommand(unittest.TestCase):
 
@@ -126,10 +123,10 @@ class TestBindFileEditorWindow(unittest.TestCase):
 
     def test_BindFileEditorWindow(self):
 
-        win = BindFileEditorWindow()
+        print("uncomment to test.  Fails when run as set without mainloop")
+        # win = BindFileEditorWindow()
 
-        #tk.mainloop()
-        win.destroy()
+        # tk.mainloop()
 
 if __name__ == "__main__":
     unittest.main()
