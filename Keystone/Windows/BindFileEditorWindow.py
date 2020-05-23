@@ -18,7 +18,6 @@ class BindFileEditorWindow(tk.Tk):
 
     def NewTab(self, mode, path = None):
         with self.TabLock:
-            self._showNotebook()
             self.config(cursor="wait")
             self.update()
             try:
@@ -43,6 +42,7 @@ class BindFileEditorWindow(tk.Tk):
                 self.SetTabName()
             finally:
                 self.config(cursor="")
+            self._showNotebook()
 
     def SetTabName(self, editor = None):
         if (editor == None):
@@ -180,7 +180,8 @@ class BindFileEditorWindow(tk.Tk):
 
     def _showNotebook(self):
         if (not self.ShowingNotebook):
-            self.Notebook.grid(row=0, column=0, sticky='nsew')
+            self.Notebook.pack(fill=tk.BOTH, expand=True, side=tk.TOP)
+            self.FirstFrame.pack_forget()
             self.ShowingNotebook = True
 
     def __init__(self, *args, **kwargs):
@@ -221,15 +222,15 @@ class BindFileEditorWindow(tk.Tk):
         SetOpenLinkedFileCallback(self._openLinkedFileCallback)
 
         self.FirstFrame = KeystoneFrame(win)
-        self.FirstFrame.columnconfigure(0, weight=1, minsize=800)
-        self.FirstFrame.rowconfigure(0, weight=1, minsize=400)
+        self.FirstFrame.columnconfigure(0, weight=1, minsize = 800)
+        self.FirstFrame.rowconfigure(0, weight=1, minsize = 400)
         walkthroughButton = KeystoneButton(self.FirstFrame, text='Intro Walkthrough', command = lambda parent=win: ShowIntroWalkthrough(parent))
         walkthroughButton.Color('lightskyblue', 'black')
         walkthroughButton.configure(relief = tk.RAISED)
         walkthroughButton.grid()
         self.FirstFrame.pack(fill=tk.BOTH, expand=True, side=tk.TOP)
 
-        self.Notebook = FrameNotebook(self.FirstFrame, EditBindFile, [None, False, False, self.OnSaveCallback])
+        self.Notebook = FrameNotebook(win, EditBindFile, [None, False, False, self.OnSaveCallback])
         self.ShowingNotebook = False
 
         win.config(menu=menu, width=800, height=400)
