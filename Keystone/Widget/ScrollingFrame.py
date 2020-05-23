@@ -22,14 +22,14 @@ class ScrollingFrame(ttk.Frame):
 
         # creating a scrollbars
         self.xscrlbr = ttk.Scrollbar(scrollBarFrame, orient = 'horizontal')
-        self.xscrlbr.grid(column = 0, row = 1, sticky = 'ew', columnspan = 2, padx=0, pady=0)         
+        self.showx = False      
         self.yscrlbr = ttk.Scrollbar(scrollBarFrame)
-        self.yscrlbr.grid(column = 1, row = 0, sticky = 'ns', padx=0, pady=0)         
+        self.showy = False      
         # creating a canvas
         self.canv = tk.Canvas(scrollBarFrame)
         self.canv.config(relief = 'flat',
-                         width = 0,
-                         height = 0, bd = 0, 
+                         width = 800,
+                         height = 400, bd = 0, 
                          bg='black',
                          highlightbackground='black',
                          xscrollcommand = self.xscrlbr.set,
@@ -49,6 +49,7 @@ class ScrollingFrame(ttk.Frame):
         self.yscrlbr.lift(self.scrollwindow)        
         self.xscrlbr.lift(self.scrollwindow)
         self.bind('<Configure>', self._configure_window)  
+        self.canv.bind_all("<Configure>", self._configure_window) 
         self.bind('<Enter>', self._bound_to_mousewheel)
         self.bind('<Leave>', self._unbound_to_mousewheel)
 
@@ -61,16 +62,36 @@ class ScrollingFrame(ttk.Frame):
         self.canv.unbind_all("<MouseWheel>") 
 
     def _on_mousewheel(self, event):
-        self.canv.yview_scroll(int(-1*(event.delta/120)), "units")  
+        if (self.showy):
+            self.canv.yview_scroll(int(-1*(event.delta/120)), "units")  
 
     def _configure_window(self, event):
-        self.canv.bind_all("<Configure>", self._configure_window) 
         # update the scrollbars to match the size of the inner frame
-        size = (self.scrollwindow.winfo_reqwidth(), self.scrollwindow.winfo_reqheight())
-        self.canv.config(scrollregion='0 0 %s %s' % size)
-        if self.scrollwindow.winfo_reqwidth() != self.canv.winfo_width():
-            # update the canvas's width to fit the inner frame
-            self.canv.config(width = self.scrollwindow.winfo_reqwidth())
-        if self.scrollwindow.winfo_reqheight() != self.canv.winfo_height():
-            # update the canvas's width to fit the inner frame
-            self.canv.config(height = self.scrollwindow.winfo_reqheight())
+        required_size = (self.scrollwindow.winfo_reqwidth(), self.scrollwindow.winfo_reqheight())
+        actual_size = (self.canv.winfo_width(), self.canv.winfo_height())
+
+        if (required_size[0] > actual_size[0]):
+            if (not self.showx):
+                self.xscrlbr.grid(column = 0, row = 1, sticky = 'ew', columnspan = 2, padx=0, pady=0)  
+                self.showx = True 
+        elif (self.showx):
+            self.xscrlbr.grid_forget()
+            self.showx = False
+
+        if (required_size[1] > actual_size[1]):
+            if (not self.showy):
+                self.yscrlbr.grid(column = 1, row = 0, sticky = 'ns', padx=0, pady=0)   
+                self.showy = True 
+        elif (self.showy):
+            self.yscrlbr.grid_forget()
+            self.showy = False
+
+        if (self.showx or self.showy):
+            self.canv.config(scrollregion='0 0 %s %s' % required_size)
+
+            if required_size[0] != actual_size[0]:
+                # update the canvas's width to fit the inner frame
+                self.canv.config(width = required_size[0])
+            if required_size[1] != actual_size[1]:
+                # update the canvas's width to fit the inner frame
+                self.canv.config(height = required_size[1])

@@ -5,15 +5,15 @@ from tkinter.colorchooser import askcolor
 
 from Keystone.Model.SlashCommand import IsLoadFileCommand, SlashCommand
 from Keystone.Reference.CommandReference import LIST_OF_SLASH_COMMANDS
-from Keystone.Reference.DefaultKeyBindings import DEFAULT_BIND
 from Keystone.Utility.KeystoneUtils import (AverageRGBValues, GetFileName,
                                             RemoveOuterQuotes,
                                             TriggerOpenLinkedFileCallback)
 from Keystone.Widget.ColorPicker import ColorPicker
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
-from Keystone.Widget.KeystoneFormats import (FONT_SIZE, TEXT_FONT, KeystoneButton,
-                             KeystoneCombo, KeystoneEntry, KeystoneFrame,
-                             KeystoneLabel, KeystoneRadio)
+from Keystone.Widget.KeystoneFormats import (FONT_SIZE, TEXT_FONT,
+                                             KeystoneButton, KeystoneCombo,
+                                             KeystoneEntry, KeystoneFrame,
+                                             KeystoneLabel, KeystoneRadio)
 from Keystone.Widget.KeystoneTextEntry import KeystoneTextEntry
 
 
@@ -187,7 +187,7 @@ class SlashCommandEditor(KeystoneEditFrame):
             self.TextEntry.SetText("\"%s\"" % (filePath))        
             file = open(filePath, "w+")
             try:
-                file.write(DEFAULT_BIND)
+                file.write("")
             finally:
                 file.close()
             TriggerOpenLinkedFileCallback(filePath)

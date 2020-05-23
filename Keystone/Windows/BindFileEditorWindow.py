@@ -18,7 +18,6 @@ class BindFileEditorWindow(tk.Tk):
 
     def NewTab(self, mode, path = None):
         with self.TabLock:
-            self._showNotebook()
             self.config(cursor="wait")
             self.update()
             try:
@@ -43,11 +42,16 @@ class BindFileEditorWindow(tk.Tk):
                 self.SetTabName()
             finally:
                 self.config(cursor="")
+            self._showNotebook()
 
-    def SetTabName(self):
-        editor = self.Notebook.SelectedFrame()
+    def SetTabName(self, editor = None):
         if (editor == None):
-            return
+            editor = self.Notebook.SelectedFrame()
+            if (editor == None):
+                return
+        else:
+            tab = self.Notebook.GetTabNameFromItem(editor)
+            self.Notebook.select(tab)
         if (editor.Model == None):
             self.Notebook.RemoveSelectedFrame()
         else:
@@ -67,19 +71,20 @@ class BindFileEditorWindow(tk.Tk):
     def OnFileNewDefaults(self):
         self.NewTab("default")
 
-    def OnFileSaveAll(self):
+    def OnSaveCallback(self, editor, *args):
+        self.SetTabName(editor = editor)
+
+    def OnFileSave(self):
         editor = self.Notebook.SelectedFrame()
         if (editor == None):
             return
         editor.Save()
-        self.SetTabName()
 
     def OnFileSaveAs(self):
         editor = self.Notebook.SelectedFrame()
         if (editor == None):
             return
         editor.Save(promptForPath=True)
-        self.SetTabName()
 
     def CancelFromSavePrompt(self)->bool:
         editor = self.Notebook.SelectedFrame()
@@ -159,8 +164,9 @@ class BindFileEditorWindow(tk.Tk):
         if (self.Notebook.Dirty == True):
             response = messagebox.askyesnocancel("Edited Files", "Save all changes before closing?")
             if (response):
-                for editor in self.Notebook.children.items():
-                    editor.Save()
+                if (self.Notebook.Items != None):        
+                    for editor in self.Notebook.Items:
+                        editor.Save()
             elif(response == None):
                 return
         self.destroy()
@@ -174,7 +180,8 @@ class BindFileEditorWindow(tk.Tk):
 
     def _showNotebook(self):
         if (not self.ShowingNotebook):
-            self.Notebook.grid(row=0, column=0, sticky='nsew')
+            self.Notebook.pack(fill=tk.BOTH, expand=True, side=tk.TOP)
+            self.FirstFrame.pack_forget()
             self.ShowingNotebook = True
 
     def __init__(self, *args, **kwargs):
@@ -197,7 +204,7 @@ class BindFileEditorWindow(tk.Tk):
         self.AddCommand(menu=fileMenu, frame=speedBar, label="Open", command=self.OnFileOpen)
         self.AddCommand(menu=fileMenu, frame=speedBar, label="New (Empty)", command=self.OnFileNew)
         self.AddCommand(menu=fileMenu, frame=speedBar, label="New (Defaults)", command=self.OnFileNewDefaults)
-        self.AddCommand(menu=fileMenu, frame=speedBar, label="Save", command=self.OnFileSaveAll)
+        self.AddCommand(menu=fileMenu, frame=speedBar, label="Save", command=self.OnFileSave)
         self.AddCommand(menu=fileMenu, frame=speedBar, label="Save As...", command=self.OnFileSaveAs)
         self.AddCommand(menu=fileMenu, frame=speedBar, label="Close", command=self.OnFileClose)
         menu.add_cascade(label="File", menu=fileMenu)
@@ -215,15 +222,15 @@ class BindFileEditorWindow(tk.Tk):
         SetOpenLinkedFileCallback(self._openLinkedFileCallback)
 
         self.FirstFrame = KeystoneFrame(win)
-        self.FirstFrame.columnconfigure(0, weight=1, minsize=800)
-        self.FirstFrame.rowconfigure(0, weight=1, minsize=400)
+        self.FirstFrame.columnconfigure(0, weight=1, minsize = 800)
+        self.FirstFrame.rowconfigure(0, weight=1, minsize = 400)
         walkthroughButton = KeystoneButton(self.FirstFrame, text='Intro Walkthrough', command = lambda parent=win: ShowIntroWalkthrough(parent))
         walkthroughButton.Color('lightskyblue', 'black')
         walkthroughButton.configure(relief = tk.RAISED)
         walkthroughButton.grid()
         self.FirstFrame.pack(fill=tk.BOTH, expand=True, side=tk.TOP)
 
-        self.Notebook = FrameNotebook(self.FirstFrame, EditBindFile, None)
+        self.Notebook = FrameNotebook(win, EditBindFile, [None, False, False, self.OnSaveCallback])
         self.ShowingNotebook = False
 
         win.config(menu=menu, width=800, height=400)

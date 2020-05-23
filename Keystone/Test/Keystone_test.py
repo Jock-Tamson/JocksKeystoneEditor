@@ -532,10 +532,7 @@ class TestBindFileCollection(unittest.TestCase):
     def test_New(self):
         target = BindFileCollection()
         target.New()
-        self.assertEqual(1, len(target.File.Binds), "Unexpected empty bind length")
-        self.assertEqual("1", target.File.Binds[0].Key, "Unexpected empty key")
-        self.assertEqual("powexec_slot", target.File.Binds[0].Commands[0].Name, "Unexpected empty command")
-        self.assertEqual("1", target.File.Binds[0].Commands[0].Text, "Unexpected empty command text")
+        self.assertEqual(None, target.File.Binds, "Unexpected empty bind length")
         target.New(defaults=True)
         self.assertEqual(104, len(target.File.Binds), "Unexpected default bind length")
         self.assertEqual("'", target.File.Binds[0].Key, "Unexpected default key")
