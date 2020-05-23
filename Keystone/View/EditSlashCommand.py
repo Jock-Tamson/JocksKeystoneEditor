@@ -82,7 +82,12 @@ class SlashCommandEditor(KeystoneEditFrame):
                     self.DurationText.set("0")
             except:
                 self.DurationText.set("")
-        self.TextEntry.configure(background=background, foreground=foreground, highlightbackground=border, highlightthickness=2, font=(TEXT_FONT, int(FONT_SIZE * scale)))
+        text = self.TextEntry.GetText()
+        width= str.__len__(text)
+        min_width = round( 80 / scale)
+        if (width < min_width):
+            width = min_width
+        self.TextEntry.configure(background=background, foreground=foreground, highlightbackground=border, highlightthickness=2, font=(TEXT_FONT, int(FONT_SIZE * scale)), width=width)
         self.SetDirty()
 
     def Load(self, command: SlashCommand):
