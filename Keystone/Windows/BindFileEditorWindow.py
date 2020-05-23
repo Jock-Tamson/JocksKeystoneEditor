@@ -11,6 +11,7 @@ from Keystone.Utility.KeystoneUtils import (GetFileName, GetResourcePath,
 from Keystone.View.EditBindFile import EditBindFile
 from Keystone.Widget.FrameNotebook import FrameNotebook
 from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame
+from Keystone.Windows.KeystoneAbout import ShowHelpAbout
 from Keystone.Windows.KeystoneWalkthroughPages import ShowIntroWalkthrough
 
 
@@ -217,6 +218,7 @@ class BindFileEditorWindow(tk.Tk):
 
         helpMenu = tk.Menu(menu, tearoff = 0)
         helpMenu.add_command(label='Getting Started', command=lambda parent=win: ShowIntroWalkthrough(parent))
+        self.AddCommand(menu=helpMenu, frame=speedBar, label="About", command = lambda parent=win: ShowHelpAbout(parent))
         menu.add_cascade(label='Help', menu=helpMenu)
 
         SetOpenLinkedFileCallback(self._openLinkedFileCallback)
