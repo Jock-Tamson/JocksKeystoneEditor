@@ -20,6 +20,7 @@ from Keystone.View.EditKeylink import EditKeylink
 from Keystone.View.EditKeychain import EditKeychain
 from Keystone.Windows.KeystoneWalkthroughPages import ShowIntroWalkthrough
 from Keystone.Windows.BindFileEditorWindow import BindFileEditorWindow
+from Keystone.Windows.KeystoneAbout import ShowHelpAbout
 from Keystone.Utility.KeystoneUtils import GetResourcePath
 
 class TestKeystoneWalthroughPages(unittest.TestCase):
@@ -127,6 +128,16 @@ class TestBindFileEditorWindow(unittest.TestCase):
         # win = BindFileEditorWindow()
 
         # tk.mainloop()
+
+class TestKeystoneAbout(unittest.TestCase):
+
+    def test_KeystoneAboutself(self):
+
+        print("uncomment to test.  Fails when run as set without mainloop")
+        win = tk.Tk()
+        ShowHelpAbout(win)
+
+        tk.mainloop()
 
 if __name__ == "__main__":
     unittest.main()
