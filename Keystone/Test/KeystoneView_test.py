@@ -16,6 +16,7 @@ from Keystone.View.EditSlashCommand import SlashCommandEditor
 from Keystone.View.EditBind import EditBindWindow
 from Keystone.View.EditBindFile import EditBindFile
 from Keystone.View.BindFileCollectionView import BindFileCollectionView
+from Keystone.View.EditBindFileCollection import EditBindFileCollection
 from Keystone.View.EditKeylink import EditKeylink
 from Keystone.View.EditKeychain import EditKeychain
 from Keystone.Windows.KeystoneWalkthroughPages import ShowIntroWalkthrough
@@ -86,6 +87,19 @@ class TestBindFileCollectionView(unittest.TestCase):
         viewFrame.pack(fill=tk.BOTH, expand=True)
         #viewFrame.New()
         viewFrame.Load('.\\TestReferences\\Jock Tamson\\keybinds.txt')
+
+        #tk.mainloop()
+        win.destroy()
+        
+class TestEditBindFileCollection(unittest.TestCase):
+
+    def test_EditBindFileCollection(self):
+        
+        win = tk.Tk()
+        target = EditBindFileCollection(win)
+        target.pack(fill=tk.BOTH, expand=True)
+        #viewFrame.New()
+        target.Load('.\\TestReferences\\Jock Tamson\\keybinds.txt')
 
         #tk.mainloop()
         win.destroy()
