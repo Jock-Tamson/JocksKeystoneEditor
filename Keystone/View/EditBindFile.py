@@ -36,6 +36,14 @@ class BindListItem(KeystoneEditFrame):
         else:
             self.Editor.OnCancel()
 
+    def ShowEditButton(self, show = False):
+        if (show and (not self._showingEdit)):
+            self.Button.grid(row=0, column=0, sticky="nsew")
+            self._showingEdit = True
+        elif ((not show) and self._showingEdit):
+            self.Button.grid_forget()
+            self._showingEdit = False
+
     def __init__(self, parent, bind: Bind):
         KeystoneEditFrame.__init__(self, parent) 
 
@@ -47,6 +55,7 @@ class BindListItem(KeystoneEditFrame):
         self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=0)
         self.rowconfigure(1, weight=0)
+        self._showingEdit = True
         self.Button = KeystoneButton(self, text="...",  width=6, command=self.OnEdit)
         self.Button.grid(row=0, column=0, sticky="nsew")  
         self.Label = KeystoneLabel(self, text=bind)
@@ -237,6 +246,16 @@ class EditBindFile(KeystoneEditFrame):
                 return
         self.OnSave()
 
+    def OnOkSelect(self, *args):
+        if (self.OnSelectCallback != None):
+            selected = self.view.GetSelected()
+            if (len(selected) > 0):
+                self.OnSelectCallback(selected)
+        self.SetSelectMode(False)
+
+    def OnCancelSelect(self, *args):
+        self.SetSelectMode(False)
+
     def AddUploadBind(self, *args):
         if (self.Model.FilePath == None):
             return
@@ -262,8 +281,23 @@ class EditBindFile(KeystoneEditFrame):
         if (self.Editor == None):
             self.Editor = EditBindWindow(self, self.NewBindCallback, bind=bind, dirty = dirty)
 
+    def SetSelectMode(self, set = False):    
+        if (set != self.SelectMode):  
+            self.SelectMode = set 
+            self.view.SelectMode.set(set)
+            if (self.view.Items != None):
+                for item in [item.Item for item in self.view.Items]:
+                    item.ShowEditButton(not set)
+            if (set):
+                self.NewBindButton.grid_forget()
+                self.OkSelectButton.grid(row=0, column=1, sticky='nse')
+                self.CancelSelectButton.grid(row=0, column=2, sticky='nse')
+            else:
+                self.NewBindButton.grid(row=0, column=3, sticky='nse')
+                self.OkSelectButton.grid_forget()
+                self.CancelSelectButton.grid_forget()
 
-    def __init__(self, parent, bindFile: BindFile = None, list = False, showUploadBindButton = False, onSaveCallback = None):
+    def __init__(self, parent, bindFile: BindFile = None, list = False, showUploadBindButton = False, onSaveCallback = None, onSelectCallback = None):
         KeystoneEditFrame.__init__(self, parent) 
 
         self.OnSetDirty.append(self.ShowSaveButtons)
@@ -274,6 +308,9 @@ class EditBindFile(KeystoneEditFrame):
         self.SaveButton = None
 
         self.CancelButton = None
+
+        self.SelectMode = False
+        self.OnSelectCallback = onSelectCallback
 
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=0)
@@ -298,6 +335,12 @@ class EditBindFile(KeystoneEditFrame):
         self.NewBindButton = KeystoneButton(self, text="New Bind", command=self.OnNewBind)
         self.NewBindButton.Color("yellow", "black")
         self.NewBindButton.grid(row=0, column=3, sticky='nse')
+
+        self.OkSelectButton = KeystoneButton(self, text="Select", command=self.OnOkSelect)
+        self.OkSelectButton.Color("green", "black")
+
+        self.CancelSelectButton = KeystoneButton(self, text="Cancel", command=self.OnCancelSelect)
+        self.CancelSelectButton.Color("red", "black")
 
         if (showUploadBindButton):
             self.UploadBindButton = KeystoneButton(self, text="Add Upload Bind", command=self.AddUploadBind)
