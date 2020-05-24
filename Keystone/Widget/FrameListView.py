@@ -182,6 +182,10 @@ class FrameListView(KeystoneEditFrame):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
+        #control were items are inserted
+        self.RootItemRow = 1
+        self.ItemColumn = 0
+
         #setup show controls vars
         self.ShowControls = tk.BooleanVar()
         self.ShowControls.set(showControls)
@@ -194,6 +198,14 @@ class FrameListView(KeystoneEditFrame):
         self.SelectMode.set(selectMode)
         self.SelectMode.trace("w", self.OnSelectMode)
 
+    def _gridItem(self, item, idx, gridForget = False):
+        if (gridForget):
+            item.grid_forget()
+            self.rowconfigure(idx+self.RootItemRow, weight=0)
+        else:
+            item.grid(row=idx+self.RootItemRow, column=self.ItemColumn, sticky='nsew')
+            self.rowconfigure(idx+self.RootItemRow, weight=1)
+
     def Load(self, constructor, args, defaultArgs):
         if (self.Items != None):
             for item in self.Items:
@@ -204,8 +216,7 @@ class FrameListView(KeystoneEditFrame):
         self.OnShowControls()
         self.OnSelectMode()
         for idx, item in enumerate(self.Items):
-            item.grid(row=idx, column=0, sticky='nsew')
-            self.rowconfigure(idx, weight=1)
+            self._gridItem(item, idx)
 
         if (len(self.Items) > 0):
             self.Items[-1].SetIsLast(True)
@@ -319,6 +330,15 @@ class FrameListView(KeystoneEditFrame):
         
         self.Items[-1].SetIsLast(True)
 
+    def GetIndex(self, targetItem)->int:
+        #return index of item of -1 if not in Items 
+        index = -1
+        for idx, item in enumerate(self.Items):
+            if (item == targetItem):
+                index = idx
+                break
+        return index
+
 
     def MoveOrCreate(self, triggeringObject: FrameListViewItem, below: bool = False):
 
@@ -340,23 +360,24 @@ class FrameListView(KeystoneEditFrame):
                 triggeringIndex = triggeringIndex + 1
 
         if (not create):
+            movingIndex = self.GetIndex(self.MovingObject)
             self.Remove(self.MovingObject)
+            if (movingIndex < triggeringIndex):
+                triggeringIndex = triggeringIndex - 1
 
         self.Insert(triggeringIndex, self.MovingObject)
         
         self.ExitMoveMode()
 
     def Remove(self, itemToRemove: FrameListViewItem):
-        for idx, item in enumerate(self.Items):
-            if (item == itemToRemove):
-                index = idx
+        index = self.GetIndex(itemToRemove)
+        if (index == -1):
+            return
         for idx in range(index, len(self.Items)):
-            self.Items[idx].grid_forget()
-            self.rowconfigure(idx, weight=0)
+            self._gridItem(self.Items[idx], idx, gridForget = True)
         self.Items.remove(itemToRemove)
         for idx in range(index, len(self.Items)):
-            self.Items[idx].grid(row=idx, column=0, sticky='nsew')
-            self.rowconfigure(idx, weight=1)
+            self._gridItem(self.Items[idx], idx)
 
         self.SetDirty()
         
@@ -365,16 +386,13 @@ class FrameListView(KeystoneEditFrame):
         if ((index < 0) or (index >= len(self.Items))):
             self.Items.append(itemToInsert)
             idx = len(self.Items) - 1
-            self.Items[idx].grid(row=idx, column=0, sticky='nsew')
-            self.rowconfigure(idx, weight=1)
+            self._gridItem(self.Items[idx], idx)
         else:
             for idx in range(index, len(self.Items)):
-                self.Items[idx].grid_forget()
-                self.rowconfigure(idx, weight=0)
+                self._gridItem(self.Items[idx], idx, gridForget=True)
             self.Items.insert(index, itemToInsert)
             for idx in range(index, len(self.Items)):
-                self.Items[idx].grid(row=idx, column=0, sticky='nsew')
-                self.rowconfigure(idx, weight=1)
+                self._gridItem(self.Items[idx], idx)
 
         self.SetDirty()
 
