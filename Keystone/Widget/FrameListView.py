@@ -179,12 +179,14 @@ class FrameListView(KeystoneEditFrame):
         self.Constructor = None
         self.DefaultArgs = None
 
-        self.columnconfigure(0, weight=1)
+        self.columnconfigure(0, weight=0)
+        self.columnconfigure(0, weight=0)
+        self.columnconfigure(2, weight=1)
         self.rowconfigure(0, weight=1)
 
         #control were items are inserted
         self.RootItemRow = 1
-        self.ItemColumn = 0
+        self.ItemColumn = 2
 
         #setup show controls vars
         self.ShowControls = tk.BooleanVar()
@@ -198,12 +200,15 @@ class FrameListView(KeystoneEditFrame):
         self.SelectMode.set(selectMode)
         self.SelectMode.trace("w", self.OnSelectMode)
 
+        self.SelectAll = KeystoneButton(self, text="Select All", command=self.OnSelectAll)
+        self.DeselectAll = KeystoneButton(self, text="Deselect All", command=self.OnDeselectAll)
+
     def _gridItem(self, item, idx, gridForget = False):
         if (gridForget):
             item.grid_forget()
             self.rowconfigure(idx+self.RootItemRow, weight=0)
         else:
-            item.grid(row=idx+self.RootItemRow, column=self.ItemColumn, sticky='nsew')
+            item.grid(row=idx+self.RootItemRow, column=0, columnspan=self.ItemColumn + 1, sticky='nsew')
             self.rowconfigure(idx+self.RootItemRow, weight=1)
 
     def Load(self, constructor, args, defaultArgs):
@@ -242,6 +247,26 @@ class FrameListView(KeystoneEditFrame):
         show = self.SelectMode.get()
         for item in self.Items:
             item.SelectMode.set(show)
+        if (show):
+            self.SelectAll.grid(row=0, column=0, sticky='nw', padx=3, pady=3)
+            self.DeselectAll.grid(row=0, column=1, sticky='nw', padx=3, pady=3)
+        else:
+            self.SelectAll.grid_forget()
+            self.DeselectAll.grid_forget()
+
+    def SelectOrDeselectAll(self, select = True):
+        if (self.Items == None):
+            return
+        if (not self.SelectMode.get()):
+            return
+        for item in self.Items:
+            item.Selected.set(select)
+
+    def OnSelectAll(self, *args):
+        self.SelectOrDeselectAll()
+
+    def OnDeselectAll(self, *args):
+        self.SelectOrDeselectAll(select = False)
 
 
     def EnterMoveMode(self, triggeringItem: FrameListViewItem):
