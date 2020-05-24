@@ -134,10 +134,10 @@ class TestKeystoneAbout(unittest.TestCase):
     def test_KeystoneAboutself(self):
 
         print("uncomment to test.  Fails when run as set without mainloop")
-        win = tk.Tk()
-        ShowHelpAbout(win)
+        # win = tk.Tk()
+        # ShowHelpAbout(win)
 
-        tk.mainloop()
+        # tk.mainloop()
 
 if __name__ == "__main__":
     unittest.main()
