@@ -219,11 +219,15 @@ class FrameListView(KeystoneEditFrame):
 
 
     def OnShowControls(self, *args):
+        if (self.Items == None):
+            return
         show = self.ShowControls.get()
         for item in self.Items:
             item.ShowControls.set(show)
 
     def OnSelectMode(self, *args):
+        if (self.Items == None):
+            return
         show = self.SelectMode.get()
         for item in self.Items:
             item.SelectMode.set(show)

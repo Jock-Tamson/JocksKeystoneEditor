@@ -3,7 +3,8 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from Keystone.Model.BindFileCollection import NEW_FILE
+from Keystone.Model.BindFile import BindFile
+from Keystone.Model.BindFileCollection import BindFileCollection, NEW_FILE
 from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.DefaultKeyBindings import LOAD_COMMAND, SAVE_COMMAND
 from Keystone.Utility.KeystoneUtils import (GetFileName, GetResourcePath,
@@ -172,6 +173,36 @@ class BindFileEditorWindow(tk.Tk):
                 return
         self.destroy()
 
+    def _onSelectCallback(self, binds, *args):   
+
+        editor = self.Notebook.SelectedFrame()
+        bindFilePath = editor.Model.FilePath
+        options = {}
+        options['initialfile'] = "keybinds.kst"
+        options['title'] = "Select File Destination"
+        options['filetypes'] = (("Keybind Export Files", "*.kst"), ("All Files", "*.*"))
+        options['defaultextension'] = "kst"
+        filePath = filedialog.asksaveasfilename(**options)
+        if (filePath == ''):
+            return False
+
+        bindFile = BindFile(binds, filePath = bindFilePath)
+        bindFileCollection = BindFileCollection()
+        bindFileCollection.Load(bindFilePath, bindFile = bindFile)
+        bindFileCollection.Serialize(filePath) 
+
+        return True
+        
+
+    def OnExportBinds(self):
+        editor = self.Notebook.SelectedFrame()
+        if (editor == None):
+            return
+        if (self.CancelFromSavePrompt()):
+            return
+        editor.OnSelectCallback = self._onSelectCallback
+        editor.SetSelectMode(not editor.SelectMode)
+
     def AddCommand(self, menu: tk.Menu, frame, label, command):
         menu.add_command(label=label, command=command)
         KeystoneButton(frame, text=label, command=command).pack(anchor='nw', side=tk.LEFT)
@@ -215,6 +246,10 @@ class BindFileEditorWindow(tk.Tk):
         cohMenu.add_command(label="Upload File", command=self.OnUploadFile)
         cohMenu.add_command(label="Add Upload Bind", command=self.OnAddUploadBind)
         menu.add_cascade(label="Game Commands", menu=cohMenu)
+
+        importExportMenu = tk.Menu(menu, tearoff = 0)
+        importExportMenu.add_command(label="Export Binds", command=self.OnExportBinds)
+        menu.add_cascade(label="Import\Export", menu=importExportMenu)
 
         helpMenu = tk.Menu(menu, tearoff = 0)
         helpMenu.add_command(label='Getting Started', command=lambda parent=win: ShowIntroWalkthrough(parent))

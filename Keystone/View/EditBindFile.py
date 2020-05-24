@@ -247,11 +247,13 @@ class EditBindFile(KeystoneEditFrame):
         self.OnSave()
 
     def OnOkSelect(self, *args):
+        close = True
         if (self.OnSelectCallback != None):
-            selected = self.view.GetSelected()
+            selected = [b.Bind for b in self.view.GetSelected()]
             if (len(selected) > 0):
-                self.OnSelectCallback(selected)
-        self.SetSelectMode(False)
+                close = self.OnSelectCallback(selected)
+        if (close):
+            self.SetSelectMode(False)
 
     def OnCancelSelect(self, *args):
         self.SetSelectMode(False)

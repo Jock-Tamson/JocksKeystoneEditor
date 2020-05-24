@@ -24,7 +24,11 @@ def GetKeyChains(bindFile: BindFile, path: str, result, boundFiles = None):
             result[keyToAdd] = [fileToAdd]
         return True
 
-    path = os.path.abspath(path)
+    if (path == None):
+        path = ""
+    else:
+        path = os.path.abspath(path)
+        
     for bind in bindFile.GetLoadFileBinds():
         for command in bind.GetLoadFileCommands():
             boundPath = command.GetTargetFile()
@@ -46,9 +50,11 @@ def GetKeyChains(bindFile: BindFile, path: str, result, boundFiles = None):
 
 class BindFileCollection():
 
-    def Load(self, filePath: str):
+    def Load(self, filePath: str, bindFile = None):
         self.FilePath = filePath
-        self.File = ReadBindsFromFile(filePath)
+        if (bindFile == None):
+            bindFile = ReadBindsFromFile(filePath)
+        self.File = bindFile
         GetKeyChains(self.File, filePath, self.KeyChains)
 
     def New(self, defaults: bool = False):
