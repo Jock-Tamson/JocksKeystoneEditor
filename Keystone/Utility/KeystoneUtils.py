@@ -81,16 +81,21 @@ def GetUniqueFilePath(filePath: str, seed: int = 1, paranthetical: bool = True, 
         idx = idx + 1
     return filePath
 
+def RemoveStartAndEndDirDelimiters(dirName: str) -> str:
+    result = dirName
+    if (result[0] == '\\'):
+        result = result[1:]
+    if (result[-1] == '\\'):
+        result = result[:-1]
+    return result
+
 #returns path from root path
 def GetDirPathFromRoot(rootPath, fullPath) -> str:
     rootPath = os.path.abspath(rootPath)
     fullPath = os.path.abspath(fullPath)
     if (rootPath != fullPath):
         dirName = fullPath.replace(rootPath, "")
-        if (dirName[0] == '\\'):
-            dirName = dirName[1:]
-        if (dirName[-1] == '\\'):
-            dirName = dirName[:-1]
+        dirName = RemoveStartAndEndDirDelimiters(dirName)
         return dirName
     else:
         return '.'

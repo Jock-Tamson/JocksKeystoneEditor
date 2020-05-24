@@ -539,6 +539,30 @@ class TestBindFileCollection(unittest.TestCase):
         self.assertEqual("quickchat", target.File.Binds[0].Commands[0].Name, "Unexpected default command")
         self.assertEqual("", target.File.Binds[0].Commands[0].Text, "Unexpected default command text")
 
+    def test_Serialization(self):
+        filePath = "temp.json"
+        collectionFilePath = os.path.abspath(".\\TestReferences\\Jock Tamson\\keybinds.txt")
+        if (path.exists(filePath)):
+            remove(filePath)
+        try:
+            target = BindFileCollection(collectionFilePath)
+            target.Serialize(filePath)
+            target = BindFileCollection()
+            target.Deserialize(filePath)
+            expected = BindFileCollection(collectionFilePath)
+            expected.RepointFilePaths("C:\\keybinds.txt", True)
+            self.assertEqual(target.File.FilePath, expected.File.FilePath, "Unexpedted name following round trip")
+            self.assertEqual(target.File.__repr__(), expected.File.__repr__(), "Unexpected repr following round trip")
+            binds = target.GetBoundFiles()
+            expectedBinds = expected.GetBoundFiles()
+            self.assertEqual(len(binds), len(expectedBinds), "Did not find expected number of bound files") 
+            for idx, expectedBind in enumerate(expectedBinds):
+                self.assertEqual(binds[idx].FilePath, expectedBind.FilePath, "Did not find expected path for bound file " + str(idx))
+                self.assertEqual(binds[idx].__repr__(), expectedBind.__repr__(), "Did not find expected repr for bound file " + str(idx))
+        finally:
+            if (path.exists(filePath)):
+                remove(filePath)
+
 class TestKeylink(unittest.TestCase):
 
     def test_init(self):

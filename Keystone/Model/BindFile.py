@@ -6,7 +6,7 @@ from Keystone.Reference.DefaultKeyBindings import (DEFAULT_BIND,
                                                    DEFAULT_COMMAND,
                                                    DEFAULT_KEY_BINDINGS)
 from Keystone.Utility.KeystoneUtils import (GetFileName, GetUniqueFilePath,
-                                            MatchKeyName)
+                                            MatchKeyName, RemoveStartAndEndDirDelimiters)
 
 
 #object for a set of keybinds to save or load from a file
@@ -67,8 +67,8 @@ class BindFile():
         if ((not overwrite) and (os.path.exists(newFilePath))):
             newFilePath = GetUniqueFilePath(newFilePath)
         self.FilePath = newFilePath
-        currentDirectory = os.path.dirname(currentFilePath)
-        newDirectory = os.path.dirname(newFilePath)
+        currentDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(currentFilePath))
+        newDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(newFilePath))
         for bind in self.GetLoadFileBinds():
             for command in bind.GetLoadFileCommands():
                 currentTargetPath = command.GetTargetFile()

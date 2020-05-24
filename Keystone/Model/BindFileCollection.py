@@ -1,11 +1,17 @@
 import os as os
+import json as json
+import tempfile
 
 from Keystone.Model.BindFile import BindFile, NewBindFile, ReadBindsFromFile
-from Keystone.Utility.KeystoneUtils import GetUniqueFilePath, RemoveOuterQuotes
+from Keystone.Utility.KeystoneUtils import GetUniqueFilePath, RemoveOuterQuotes, RemoveStartAndEndDirDelimiters
 
 NEW_FILE = "<New File>"
+ROOT = "root"
+BOUND_FILES = "bound_files"
+PATH = "path"
+REPR = "repr"
 
-def GetKeyChains(bindFile: BindFile, path: str, result):
+def GetKeyChains(bindFile: BindFile, path: str, result, boundFiles = None):
 
     def addBoundFile(keyToAdd: str, fileToAdd: BindFile) -> bool:
         if keyToAdd in result:
@@ -25,11 +31,18 @@ def GetKeyChains(bindFile: BindFile, path: str, result):
             if (boundPath == path):
                 continue
             boundKey = bind.GetKeyWithChord()
-            boundFile = ReadBindsFromFile(boundPath)
+            if (boundFiles == None):
+                boundFile = ReadBindsFromFile(boundPath)
+            else:
+                match = [b for b in boundFiles if b.FilePath == boundPath]
+                if (len(match) > 0):
+                    boundFile = match[0]
+                else:
+                    continue
             if ( not addBoundFile(boundKey, boundFile)):
                 continue
 
-            GetKeyChains(boundFile, boundPath, result)
+            GetKeyChains(boundFile, boundPath, result, boundFiles)
 
 class BindFileCollection():
 
@@ -50,6 +63,35 @@ class BindFileCollection():
             keyBind = keyBind #makes warnings happy
         return result
 
+    def Serialize(self, filePath):
+        self.RepointFilePaths("C:\\keybinds.txt", True)
+        file_dict = {ROOT : self.File.__repr__()}
+        bound_files = []
+        for boundFile in self.GetBoundFiles():
+            bound_file_dict = {}
+            bound_file_dict[PATH] = boundFile.FilePath.replace("C:", ROOT)
+            bound_file_dict[REPR] = boundFile.__repr__()
+            bound_files.append(bound_file_dict)
+        file_dict[BOUND_FILES] = bound_files
+        with open(filePath, "w+") as json_file:
+            json.dump(file_dict, json_file)
+
+
+    def Deserialize(self, filePath):
+        with open(filePath, "r") as json_file:
+            data = json.load(json_file)
+        self.FilePath = "C:\\keybinds.txt"
+        self.File = BindFile(repr=data[ROOT])
+        self.File.FilePath = self.FilePath
+        boundFiles = []
+        for boundFileEntry in data[BOUND_FILES]:
+            boundFile = BindFile(repr=boundFileEntry[REPR])
+            boundFile.FilePath = boundFileEntry[PATH].replace(ROOT, "C:")
+            boundFiles.append(boundFile)
+        self.KeyChains = {}
+        GetKeyChains(self.File, self.FilePath, self.KeyChains, boundFiles)
+
+
     def RepointFilePaths(self, newFilePath: str, overwrite: bool = False):
         if (self.File.FilePath == None):
             return
@@ -57,8 +99,8 @@ class BindFileCollection():
         newFilePath = os.path.abspath(newFilePath)
         if (currentFilePath == newFilePath):
             return
-        currentDirectory = os.path.dirname(currentFilePath)
-        newDirectory = os.path.dirname(newFilePath)
+        currentDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(currentFilePath))
+        newDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(newFilePath))
 
         self.File.RepointFilePaths(newFilePath, overwrite)
 
