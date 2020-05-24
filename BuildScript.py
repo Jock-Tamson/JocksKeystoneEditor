@@ -3,7 +3,7 @@ import os
 
 from PyInstaller import __main__ as pyi
 
-VERSION = '0.0.1-dev'
+VERSION = '0.1.1-dev'
 
 if (__name__ == "__main__"):
     workdir = os.getcwd()
