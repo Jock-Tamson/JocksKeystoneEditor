@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
-from Keystone.Widget.KeystoneFormats import (TEXT_FONT, KeystoneButton, KeystoneFrame,
+from Keystone.Widget.KeystoneFormats import (TEXT_FONT, KeystoneButton, KeystoneCheckbutton, KeystoneFrame,
                              KeystoneLabel, KeystonePromptFrame, KeystoneRadio)
 
 
@@ -95,6 +95,18 @@ class FrameListViewItem(KeystoneFrame):
             self.Delete.grid_forget()
             self.Move.grid_forget()
 
+    def OnSelectMode(self, *args):
+        selectMode = self.SelectMode.get()
+        if (selectMode):
+            self.TopInsert.grid_forget()
+            self.BottomInsert.grid_forget()
+            self.Delete.grid_forget()
+            self.Move.grid_forget()
+            self.Select.grid(column=0, row=1, sticky='nsew')
+        else:
+            self.Select.grid_forget()
+            self.OnShowControls()
+
     def __init__(self, parent, constructor, args):
         KeystoneFrame.__init__(self, parent)
         
@@ -114,12 +126,17 @@ class FrameListViewItem(KeystoneFrame):
         self.ShowControls.trace("w", self.OnShowControls)
         self.IsLast = tk.BooleanVar()
         self.IsLast.set(False)
+        self.SelectMode = tk.BooleanVar()
+        self.SelectMode.set(False)
+        self.SelectMode.trace("w", self.OnSelectMode)
 
         #add controls
         self.TopInsert = tk.Button(self, text=self.INSERT_TEXT, background=self.INSERT_COLOR, foreground=self.INSERT_TEXT_COLOR, font=(TEXT_FONT, 7, "bold"), relief=self.INSERT_STYLE, height=1, pady=0, command=self.OnInsertAbove)
         self.BottomInsert = tk.Button(self, text=self.INSERT_TEXT, background=self.INSERT_COLOR, foreground=self.INSERT_TEXT_COLOR, font=(TEXT_FONT, 7, "bold"), relief=self.INSERT_STYLE, height=1, pady=0, command=self.OnInsertBelow)
         self.Delete = tk.Button(self, text=self.DELETE_TEXT, background=self.DELETE_COLOR, foreground=self.DELETE_TEXT_COLOR, font=(TEXT_FONT, 7, "bold"), relief=self.DELETE_STYLE, width=1, wraplength=1, command=self.OnDelete)
         self.Move = tk.Button(self, text=self.MOVE_TEXT, background=self.MOVE_COLOR, foreground=self.MOVE_TEXT_COLOR, font=(TEXT_FONT, 10, "bold"), relief=self.MOVE_STYLE, command=self.OnMove)
+        self.Selected = tk.BooleanVar()
+        self.Select = KeystoneCheckbutton(self, variable=self.Selected)
         if (args == None):
             self.Item = constructor(self)
         else:
@@ -139,20 +156,22 @@ class FrameListViewItem(KeystoneFrame):
 
     def _on_enter(self, event):
         self.MouseOver = True
-        show = self.Parent.ShowControlsOnMouseOver.get() or self.Parent.ShowControls.get()
-        if (self.ShowControls.get() != show):
-            self.ShowControls.set(show)
+        if (not self.SelectMode.get()):
+            show = self.Parent.ShowControlsOnMouseOver.get() or self.Parent.ShowControls.get()
+            if (self.ShowControls.get() != show):
+                self.ShowControls.set(show)
 
     def _on_leave(self, event):
         self.MouseOver = False
-        show = self.Parent.ShowControls.get()
-        if (self.ShowControls.get() != show):
-            self.ShowControls.set(show)
+        if (not self.SelectMode.get()):
+            show = self.Parent.ShowControls.get()
+            if (self.ShowControls.get() != show):
+                self.ShowControls.set(show)
         
 
 class FrameListView(KeystoneEditFrame):
 
-    def __init__(self, parent, showControls = False, showControlsOnMouseOver = True):
+    def __init__(self, parent, showControls = False, showControlsOnMouseOver = True, selectMode = False):
         KeystoneEditFrame.__init__(self, parent)
 
         self.MovingObject = None
@@ -171,6 +190,10 @@ class FrameListView(KeystoneEditFrame):
         self.ShowControlsOnMouseOver = tk.BooleanVar()
         self.ShowControlsOnMouseOver.set(showControlsOnMouseOver)
 
+        self.SelectMode = tk.BooleanVar()
+        self.SelectMode.set(selectMode)
+        self.SelectMode.trace("w", self.OnSelectMode)
+
     def Load(self, constructor, args, defaultArgs):
         if (self.Items != None):
             for item in self.Items:
@@ -178,6 +201,8 @@ class FrameListView(KeystoneEditFrame):
         self.Constructor = constructor
         self.DefaultArgs = defaultArgs
         self.Items = [FrameListViewItem(self, constructor, item) for item in args]
+        self.OnShowControls()
+        self.OnSelectMode()
         for idx, item in enumerate(self.Items):
             item.grid(row=idx, column=0, sticky='nsew')
             self.rowconfigure(idx, weight=1)
@@ -187,10 +212,21 @@ class FrameListView(KeystoneEditFrame):
 
         self.SetClean(self)
 
+    def GetSelected(self):
+        if (self.Items == None):
+            return []
+        return [p.Item for p in self.Items if p.Selected.get()]
+
+
     def OnShowControls(self, *args):
         show = self.ShowControls.get()
         for item in self.Items:
             item.ShowControls.set(show)
+
+    def OnSelectMode(self, *args):
+        show = self.SelectMode.get()
+        for item in self.Items:
+            item.SelectMode.set(show)
 
 
     def EnterMoveMode(self, triggeringItem: FrameListViewItem):
