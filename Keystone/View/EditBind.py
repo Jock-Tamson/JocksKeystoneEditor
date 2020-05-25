@@ -10,7 +10,7 @@ from Keystone.Utility.KeystoneUtils import GetResourcePath
 from Keystone.View.EditSlashCommand import SlashCommandEditor
 from Keystone.Widget.FrameListView import FrameListView
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
-from Keystone.Widget.KeystoneFormats import (TEXT_FONT, KeystoneButton, KeystoneFrame,
+from Keystone.Widget.KeystoneFormats import (BACKGROUND, FOREGROUND, TEXT_FONT, KeystoneButton, KeystoneFrame,
                              KeystoneKeyCombo, KeystoneLabel,
                              KeystonePromptFrame)
 from Keystone.Widget.KeystoneTextEntry import KeystoneTextEntry
@@ -98,12 +98,32 @@ class BindEditor(KeystoneEditFrame):
             self.KeyFrame.grid_forget()
             self.CommandsFrame.grid_forget()
             self.UIToTextButton.grid_forget()
+            self.UnlockKeysButton.grid_forget()
             self.TextFrame.grid(row=0, column=0, rowspan="2", columnspan="3", sticky='nsew')
         else:
             self.TextFrame.grid_forget()
-            self.KeyFrame.grid(row=0, column=0, sticky='nsew')
-            self.UIToTextButton.grid(row=1, column=0, columnspan="3", sticky="nsew", padx="3", pady="3")  
+            self.KeyFrame.grid(row=0, column=0, sticky='nsew')  
+            if (self._lockKey):
+                self.UIToTextButton.grid(row=1, column=1, columnspan="2", sticky="nsew", padx="3", pady="3")
+                self.UnlockKeysButton.grid(row=1, column=0, sticky="sw")
+            else:
+                self.UIToTextButton.grid(row=1, column=0, columnspan="3", sticky="nsew", padx="3", pady="3")
             self.OnShowCommands()
+    
+    def UnlockKeys(self, unlock=True):
+        if unlock:
+            self._lockKey = False
+            self.KeyBox.grid(row=1, column=1, sticky="nsew", padx="3", pady="3")
+            self.ChordBox.grid(row=3, column=1, sticky="nsew", padx="3", pady="3")
+            self.KeyValue.grid_forget()
+            self.ChordValue.grid_forget()
+            self.UnlockKeysButton.grid_forget()
+        else:
+            self._lockKey = True
+            self.KeyBox.grid_forget()
+            self.ChordBox.grid_forget()
+            self.KeyValue.grid(row=1, column=1, sticky="nsew", padx="3", pady="3")
+            self.ChordValue.grid(row=3, column=1, sticky="nsew", padx="3", pady="3")
 
     def Load(self, bind: Bind):
         self.Loading = True
@@ -216,12 +236,8 @@ class BindEditor(KeystoneEditFrame):
         keyLabel = KeystoneLabel(self.KeyFrame, anchor='nw', text="Key", width=5)
         keyLabel.grid(row=1, column=0, sticky="nw", padx="3", pady="3")
         self.Key = tk.StringVar()
-        if (lockKey):
-            keyValue = KeystoneLabel(self.KeyFrame, anchor='nw', textvariable=self.Key, width=5)
-            keyValue.grid(row=1, column=1, sticky="nsew", padx="3", pady="3")
-        else:
-            keyBox = KeystoneKeyCombo(self.KeyFrame, textvariable=self.Key, values=" ".join([ c[0] for c in KEY_NAMES]))
-            keyBox.grid(row=1, column=1, sticky="nsew", padx="3", pady="3")
+        self.KeyValue = KeystoneLabel(self.KeyFrame, anchor='nw', textvariable=self.Key, width=5)
+        self.KeyBox = KeystoneKeyCombo(self.KeyFrame, textvariable=self.Key, values=" ".join([ c[0] for c in KEY_NAMES]))
         self.Key.trace("w", self.SelectKey)
         self.Key.trace("w", self.SetDirty)
         
@@ -233,18 +249,17 @@ class BindEditor(KeystoneEditFrame):
         chordLabel = KeystoneLabel(self.KeyFrame, anchor='nw', text="Chord", width=5)
         chordLabel.grid(row=3, column=0, sticky="nw", padx="3", pady="3")
         self.Chord = tk.StringVar()
-        if (lockKey):
-            chordValue = KeystoneLabel(self.KeyFrame, anchor='nw', textvariable=self.Chord, width=5)
-            chordValue.grid(row=3, column=1, sticky="nsew", padx="3", pady="3")
-        else:
-            chordBox = KeystoneKeyCombo(self.KeyFrame, textvariable=self.Chord, values=" ".join([ c[0] for c in CHORD_KEYS]))
-            chordBox.grid(row=3, column=1, sticky="nsew", padx="3", pady="3")
+        self.ChordValue = KeystoneLabel(self.KeyFrame, anchor='nw', textvariable=self.Chord, width=5)
+        self.ChordBox = KeystoneKeyCombo(self.KeyFrame, textvariable=self.Chord, values=" ".join([ c[0] for c in CHORD_KEYS]))
         self.Chord.trace("w", self.SelectChord)
         self.Chord.trace("w", self.SetDirty)
         
         self.ChordDescription = tk.StringVar()
         chordDescription = KeystoneLabel(self.KeyFrame, anchor="nw", textvariable=self.ChordDescription, wraplength=200)
         chordDescription.grid(row=4, column=0, columnspan=2, sticky="nsew", padx="3", pady="3")
+
+        self.UnlockKeysButton = KeystoneButton(self, text="Change Assigned Key", command=self.UnlockKeys)
+        self.UnlockKeysButton.Color(FOREGROUND, BACKGROUND)
 
         self.ShowCommands = tk.BooleanVar()
         self.ShowCommands.trace("w", self.OnShowCommands)
@@ -261,6 +276,7 @@ class BindEditor(KeystoneEditFrame):
         self.TextToUIButton.grid(row=1, column=0, sticky="nsew", padx="3", pady="3")  
 
         self.OnShowTextEditor()
+        self.UnlockKeys(not lockKey)
         
         self.Load(bind)
         self.Dirty.set(dirty)
@@ -309,17 +325,17 @@ class EditBindWindow(tk.Toplevel):
         frame = KeystoneEditFrame(self)
         frame.columnconfigure(0, weight=0)
         frame.columnconfigure(1, weight=1, minsize='205')
-        frame.rowconfigure(0, weight=0)
-        frame.rowconfigure(1, weight=1)
+        frame.rowconfigure(0, weight=1)
+        frame.rowconfigure(1, weight=0)
         self.Editor = BindEditor(frame, bind, lockKey = lockKey, dirty = dirty)
-        self.Editor.grid(column = 1, row = 1, sticky='nsew')
+        self.Editor.grid(column = 1, row = 0, rowspan=2, sticky='nsew')
         self.Cancel = KeystoneButton(frame, text="OK", command=self.OnOk)
         self.Cancel.configure(text="Cancel",  command=self.OnCancel)
         self.Cancel.Color('red', 'black')
-        self.Cancel.grid(column=0, row=0, sticky='nsew')
+        self.Cancel.grid(column=0, row=1, sticky='nsew')
         self.OK = KeystoneButton(frame, text="OK", command=self.OnOk)
         self.OK.Color('green', 'black')
-        self.OK.grid(column=0, row=1, sticky='nsew')
+        self.OK.grid(column=0, row=0, sticky='nsew')
         frame.grid(column=0, row=0, sticky='nsew')
 
 

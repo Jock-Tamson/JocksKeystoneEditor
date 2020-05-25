@@ -23,16 +23,20 @@ class BindListItem(KeystoneEditFrame):
 
     def EditorCallback(self, result, bind, *args):
         self.Button.Color(BACKGROUND, FOREGROUND)
-        if (result):
-            self.Bind = bind
-            self.SetDirty()
-            self.Label.configure(text=self.Bind)
         self.Editor = None
-
+        if (result):
+            if (bind.GetKeyWithChord(defaultNames=True) != self.Bind.GetKeyWithChord(defaultNames=True)):
+                self.BindFileEditor.NewBindCallback(True, bind, moving = self.master)
+            else:
+                self.Bind = bind
+                self.SetDirty()
+                self.Label.configure(text=self.Bind)
+        
+            
     def OnEdit(self, *args):
         if self.Editor == None:
             self.Button.Color(FOREGROUND, BACKGROUND)
-            self.Editor = EditBindWindow(self, self.EditorCallback, self.Bind, (not self.Parent.ShowControlsOnMouseOver.get()))
+            self.Editor = EditBindWindow(self, self.EditorCallback, self.Bind, lockKey=True)
         else:
             self.Editor.OnCancel()
 
@@ -47,7 +51,11 @@ class BindListItem(KeystoneEditFrame):
     def __init__(self, parent, bind: Bind):
         KeystoneEditFrame.__init__(self, parent) 
 
-        self.Parent = parent.Parent
+        self.BindFileEditor = parent
+        while (self.BindFileEditor.__class__.__name__ != "EditBindFile"):
+            self.BindFileEditor = self.BindFileEditor.master
+            if (self.BindFileEditor == None):
+                break
         self.Editor = None
         self.Bind = bind
 
@@ -114,12 +122,19 @@ class EditBindFile(KeystoneEditFrame):
         else:
             self.PathLabel.configure(text=bindFile.FilePath)
         self.OnLinkedFilesFound()
+        
+    def _buildKeyWithChord(self, key, chord):        
+        if (chord == ""):
+            result = str.upper(key)
+        else:
+            result = "%s+%s" % (str.upper(chord), str.upper(key))
+        return result
 
-    def NewBindCallback(self, result, bind):
+    def NewBindCallback(self, result, bind, moving = None):
+
         self.Editor = None
         if (result):
             insertIndex = None
-            index = -1
             replaceItem = None
             newKey = bind.Key
             newChord = bind.Chord
@@ -127,6 +142,8 @@ class EditBindFile(KeystoneEditFrame):
                 self.view.Items = []
 
             #find place in list
+            itemsInList = [ (idx, self._buildKeyWithChord(item.Item.Bind.Key, item.Item.Bind.Chord)) for idx, item in enumerate(self.view.Items) ]
+            newKeyWithChord = self._buildKeyWithChord(newKey, newChord)
             chords = ['']
             for chord, altname, desc in CHORD_KEYS:
                 dummy = altname
@@ -136,16 +153,18 @@ class EditBindFile(KeystoneEditFrame):
                 dummy = altname
                 dummy = desc
                 for chord in chords:
-                    match = [item for item in self.view.Items if (item.Item.Bind.Key == key) and (item.Item.Bind.Chord == chord)]
+                    keyWithChord = self._buildKeyWithChord(key, chord)
+                    match = [(idx, listedKeyWithChord) for idx, listedKeyWithChord in itemsInList if listedKeyWithChord == keyWithChord]
                     if (len(match) > 0):
                         #this key is in binds
-                        index = index + 1
+                        index = match[0][0]
                         #we are overwriting it
-                        if ((str.upper(match[0].Item.Bind.Key) == str.upper(newKey)) and (str.upper(match[0].Item.Bind.Chord) == str.upper(newChord))):
-                            replaceItem = match[0]
+                        matchKeyWithChord = match[0][1]
+                        if (matchKeyWithChord == newKeyWithChord ):
+                            replaceItem = self.view.Items[index]
                             insertIndex = index
                             break
-                    if ((str.upper(key) == str.upper(newKey)) and (str.upper(chord) == str.upper(newChord))):
+                    if (keyWithChord == newKeyWithChord):
                         #this is our spot
                         insertIndex = index + 1
                         break
@@ -153,11 +172,26 @@ class EditBindFile(KeystoneEditFrame):
                     break
 
             if (replaceItem != None):
-                response = messagebox.askokcancel("Existing Bind", "Overwrite the existing bind for " + newKey)
+                response = messagebox.askokcancel("Existing Bind", "Overwrite the existing bind for " + newKeyWithChord)
                 if (response):
                     self.view.Remove(replaceItem)
                 else:
-                    self.Editor = EditBindWindow(self, self.NewBindCallback, bind, title='New Bind')
+                    if (moving == None):
+                        title = 'New Bind'
+                        self.Editor = EditBindWindow(self, self.NewBindCallback, bind, title=title)
+                    else:  
+                        title = moving.Item.Bind.GetKeyWithChord()          
+                        moving.Item.Button.Color(FOREGROUND, BACKGROUND)
+                        moving.Item.Editor = EditBindWindow(moving.Item, moving.Item.EditorCallback, bind, title=title)
+                    return
+
+            if (moving != None):
+                #remapping rather than inserting new
+                movingIndex = self.view.GetIndex(moving)
+                if (movingIndex >= 0):
+                    self.view.Remove(moving)
+                    if (movingIndex < insertIndex):
+                        insertIndex = insertIndex - 1
 
             self.view.Insert(insertIndex, FrameListViewItem(self.view, BindListItem, bind))
 
