@@ -2,12 +2,12 @@ from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.KeyNames import CHORD_KEYS, KEY_NAMES
 from Keystone.Utility.KeystoneUtils import MatchKeyName, RemoveOuterQuotes
 
-
 #object for a keybind of 1 or more commands
 class Bind():
 
     COMMAND_SEPARATOR = "$$"
     PADDED_COMMAND_SEPARATOR = "%s " % COMMAND_SEPARATOR
+    UNBOUND = "UNBOUND"
 
     #Parse key and command list from representative string
     def Parse(self, repr: str):
@@ -25,11 +25,14 @@ class Bind():
         else:
             self.Key = parts[0].strip()
 
-        #split on command separator and send parts to SlashCommand init
-        parts = [p.lstrip() for p in commands.split(self.COMMAND_SEPARATOR)]
-        if (commands.__contains__(self.PADDED_COMMAND_SEPARATOR)):
-            self.COMMAND_SEPARATOR = self.PADDED_COMMAND_SEPARATOR
-        self.Commands = [SlashCommand(repr = p) for p in parts]
+        if ((commands == "") or (commands == self.UNBOUND)):
+            self.Commands = None
+        else:
+            #split on command separator and send parts to SlashCommand init
+            parts = [p.lstrip() for p in commands.split(self.COMMAND_SEPARATOR)]
+            if (commands.__contains__(self.PADDED_COMMAND_SEPARATOR)):
+                self.COMMAND_SEPARATOR = self.PADDED_COMMAND_SEPARATOR
+            self.Commands = [SlashCommand(repr = p) for p in parts]
 
 
     #init with name of key to bind and list of SlashCommands to concatente or from a string representation
@@ -102,7 +105,7 @@ class Bind():
 
     def GetCommands(self):
         if (self.Commands == None):
-            return "UNBOUND"
+            return self.UNBOUND
         else:
             commands = self.COMMAND_SEPARATOR.join([str(p) for p in self.Commands])
             return "\"%s\"" % (commands)
