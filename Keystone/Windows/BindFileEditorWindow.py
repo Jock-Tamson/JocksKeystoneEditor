@@ -18,20 +18,23 @@ from Keystone.Windows.KeystoneWalkthroughPages import ShowIntroWalkthrough
 
 class BindFileEditorWindow(tk.Tk):
 
-    def NewTab(self, mode, path = None):
+    def NewTab(self, mode, path = None, bindFile = None):
         with self.TabLock:
             self.config(cursor="wait")
             self.update()
             try:
                 if ((mode == "open") and (path != None) and (self.Notebook.Items != None)):
                     #check we don't already have it open
+                    thisPath = os.path.realpath(os.path.abspath(path))
                     for item in self.Notebook.Items:
                         if (item.Model == None):
                             continue
                         openPath = item.Model.FilePath
                         if (openPath == None):
                             continue
-                        if (os.path.abspath(openPath) == os.path.abspath(path)):
+                        openPath = os.path.realpath(os.path.abspath(openPath))
+                        
+                        if ( thisPath == openPath ):
                             return
                 self.Notebook.NewFrame("")
                 editor = self.Notebook.SelectedFrame()
@@ -39,6 +42,9 @@ class BindFileEditorWindow(tk.Tk):
                     editor.Open(fileName = path)
                 elif (mode == "new"):
                     editor.New(defaults=False)
+                    if (bindFile != None):
+                        editor.Load(bindFile)
+                        editor.SetDirty()
                 elif (mode == "default"):
                     editor.New(defaults=True)
                 self.SetTabName()
@@ -194,6 +200,45 @@ class BindFileEditorWindow(tk.Tk):
         return True
         
 
+    def OnImportBinds(self):
+        editor = self.Notebook.SelectedFrame()
+        if (editor == None):
+            return
+        if (self.CancelFromSavePrompt()):
+            return
+        
+        options = {}
+        
+        options['title'] = "Open Keybind Export File"
+        options['filetypes'] = (("Keybind Export Files", "*.kst"), ("All Files", "*.*"))
+        options['defaultextension'] = "kst"
+        options['multiple'] = False
+        fileName = filedialog.askopenfilename(**options)
+        if (fileName == ''):
+            return
+
+        importCollection = BindFileCollection()
+        importCollection.Deserialize(fileName)
+        boundFiles = importCollection.GetBoundFiles()
+        if ((editor.Model.FilePath == None) and (len(boundFiles) > 0)):
+            options = {}
+            options['title'] = "Select Target Directory for Linked Files"
+            dirName = filedialog.askdirectory(**options)
+            if (dirName == ''):
+                return
+            pointPath = os.path.join(dirName, "keybinds.txt")
+        else:
+            pointPath = editor.Model.FilePath
+
+        importCollection.RepointFilePaths(pointPath)
+
+        for bindFile in importCollection.GetBoundFiles():
+            self.NewTab("new", bindFile = bindFile)
+
+        self.Notebook.SelectTabForItem(editor)
+        for bind in importCollection.File.Binds:
+            editor.NewBindCallback(True, bind)
+
     def OnExportBinds(self):
         editor = self.Notebook.SelectedFrame()
         if (editor == None):
@@ -208,7 +253,10 @@ class BindFileEditorWindow(tk.Tk):
         KeystoneButton(frame, text=label, command=command).pack(anchor='nw', side=tk.LEFT)
 
     def _openLinkedFileCallback(self, path):
+        editor = self.Notebook.SelectedFrame()
         self.NewTab("open", path)
+        if (editor != None):
+            self.Notebook.SelectTabForItem(editor)
 
     def _showNotebook(self):
         if (not self.ShowingNotebook):
@@ -248,8 +296,9 @@ class BindFileEditorWindow(tk.Tk):
         menu.add_cascade(label="Game Commands", menu=cohMenu)
 
         importExportMenu = tk.Menu(menu, tearoff = 0)
+        importExportMenu.add_command(label="Import Binds", command=self.OnImportBinds)
         importExportMenu.add_command(label="Export Binds", command=self.OnExportBinds)
-        menu.add_cascade(label="Import\Export", menu=importExportMenu)
+        menu.add_cascade(label="Import\\Export", menu=importExportMenu)
 
         helpMenu = tk.Menu(menu, tearoff = 0)
         helpMenu.add_command(label='Getting Started', command=lambda parent=win: ShowIntroWalkthrough(parent))

@@ -32,13 +32,13 @@ def GetKeyChains(bindFile: BindFile, path: str, result, boundFiles = None):
     for bind in bindFile.GetLoadFileBinds():
         for command in bind.GetLoadFileCommands():
             boundPath = command.GetTargetFile()
-            if (boundPath == path):
+            if (os.path.realpath (boundPath) == os.path.realpath (path)):
                 continue
             boundKey = bind.GetKeyWithChord()
             if (boundFiles == None):
                 boundFile = ReadBindsFromFile(boundPath)
             else:
-                match = [b for b in boundFiles if b.FilePath == boundPath]
+                match = [b for b in boundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundPath)]
                 if (len(match) > 0):
                     boundFile = match[0]
                 else:
@@ -99,6 +99,16 @@ class BindFileCollection():
 
 
     def RepointFilePaths(self, newFilePath: str, overwrite: bool = False):
+
+        if (newFilePath == None):
+            self.File.FilePath = None
+
+            boundFiles = self.GetBoundFiles()
+            for boundFile in boundFiles:
+                boundFile.FilePath = None
+
+            return
+
         if (self.File.FilePath == None):
             return
         currentFilePath = os.path.abspath(self.File.FilePath)
