@@ -107,7 +107,7 @@ class FrameListViewItem(KeystoneFrame):
             self.Select.grid_forget()
             self.OnShowControls()
 
-    def __init__(self, parent, constructor, args):
+    def __init__(self, parent, constructor, *args, **kwargs):
         KeystoneFrame.__init__(self, parent)
         
         self.Parent = parent
@@ -137,10 +137,7 @@ class FrameListViewItem(KeystoneFrame):
         self.Move = tk.Button(self, text=self.MOVE_TEXT, background=self.MOVE_COLOR, foreground=self.MOVE_TEXT_COLOR, font=(TEXT_FONT, 10, "bold"), relief=self.MOVE_STYLE, command=self.OnMove)
         self.Selected = tk.BooleanVar()
         self.Select = KeystoneCheckbutton(self, variable=self.Selected)
-        if (args == None):
-            self.Item = constructor(self)
-        else:
-            self.Item = constructor(self, args)
+        self.Item = constructor(self, *args, **kwargs)
         self.Item.grid(column=1, row=1, sticky='nsew')
 
         #bind mouse controls
