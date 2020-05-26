@@ -22,7 +22,7 @@ from Keystone.Widget.KeystoneFormats import (BACKGROUND, FOREGROUND, KeystoneBut
 class BindListItem(KeystoneEditFrame):
 
     def EditorCallback(self, result, bind, *args):
-        self.Button.Color(BACKGROUND, FOREGROUND)
+        self.SetEdited()
         self.Editor = None
         if (result):
             if (bind.GetKeyWithChord(defaultNames=True) != self.Bind.GetKeyWithChord(defaultNames=True)):
@@ -32,6 +32,12 @@ class BindListItem(KeystoneEditFrame):
                 self.SetDirty()
                 self.Label.configure(text=self.Bind)
         
+    def SetEdited(self, *args):
+        dirty = self.Dirty.get()
+        if dirty:
+            self.Button.Color('yellow', BACKGROUND)
+        else:
+            self.Button.Color(BACKGROUND, FOREGROUND)
             
     def OnEdit(self, *args):
         if self.Editor == None:
@@ -48,7 +54,7 @@ class BindListItem(KeystoneEditFrame):
             self.Button.grid_forget()
             self._showingEdit = False
 
-    def __init__(self, parent, bind: Bind):
+    def __init__(self, parent, bind: Bind, dirty = False):
         KeystoneEditFrame.__init__(self, parent) 
 
         self.BindFileEditor = parent
@@ -68,6 +74,12 @@ class BindListItem(KeystoneEditFrame):
         self.Button.grid(row=0, column=0, sticky="nsew")  
         self.Label = KeystoneLabel(self, text=bind)
         self.Label.grid(row=0,column=1, sticky="nsew") 
+
+        self.OnSetDirty.append(self.SetEdited)
+        self.OnSetClean.append(self.SetEdited)
+        self.BindFileEditor.OnSetClean.append(self.SetClean)
+        if (dirty):
+            self.SetDirty()
 
 class EditBindFile(KeystoneEditFrame):
 
@@ -172,17 +184,17 @@ class EditBindFile(KeystoneEditFrame):
                     break
 
             if (replaceItem != None):
-                response = messagebox.askokcancel("Existing Bind", "Overwrite the existing bind for " + newKeyWithChord)
+                response = messagebox.askokcancel("Existing Bind", "Overwrite the existing bind for %s\n\n%s\n\nwith the new bind\n\n%s?" % (newKeyWithChord, replaceItem.Item.Bind, bind ))
                 if (response):
                     self.view.Remove(replaceItem)
                 else:
                     if (moving == None):
                         title = 'New Bind'
-                        self.Editor = EditBindWindow(self, self.NewBindCallback, bind, title=title)
+                        self.Editor = EditBindWindow(self, self.NewBindCallback, bind, title=title, dirty=True)
                     else:  
                         title = moving.Item.Bind.GetKeyWithChord()          
                         moving.Item.Button.Color(FOREGROUND, BACKGROUND)
-                        moving.Item.Editor = EditBindWindow(moving.Item, moving.Item.EditorCallback, bind, title=title)
+                        moving.Item.Editor = EditBindWindow(moving.Item, moving.Item.EditorCallback, bind, title=title, dirty=True)
                     return
 
             if (moving != None):
@@ -193,7 +205,7 @@ class EditBindFile(KeystoneEditFrame):
                     if (movingIndex < insertIndex):
                         insertIndex = insertIndex - 1
 
-            self.view.Insert(insertIndex, FrameListViewItem(self.view, BindListItem, bind))
+            self.view.Insert(insertIndex, FrameListViewItem(self.view, BindListItem, bind, True))
 
     def OnNewBind(self, *args):
         if (self.Editor == None):
