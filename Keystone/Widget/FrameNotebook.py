@@ -24,6 +24,10 @@ class FrameNotebook(ttk.Notebook):
         name = str(self) + "." + ReverseDictionaryLookup(self.children, item)
         return name
 
+    def SelectTabForItem(self, item):
+        tab = self.GetTabNameFromItem(item)
+        self.select(tab)
+
     def GetTabTextFromItem(self, item):
         tab = self.GetTabNameFromItem(item)
         text = self.tab(tab)['text']
