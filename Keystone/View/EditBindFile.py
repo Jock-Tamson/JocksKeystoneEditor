@@ -31,6 +31,8 @@ class BindListItem(KeystoneEditFrame):
                 self.Bind = bind
                 self.SetDirty()
                 self.Label.configure(text=self.Bind)
+                if bind.IsLoadFileBind():
+                    self.BindFileEditor.OnLinkedFilesFound(binds=[bind])
         
     def SetEdited(self, *args):
         dirty = self.Dirty.get()
@@ -208,6 +210,8 @@ class EditBindFile(KeystoneEditFrame):
                         insertIndex = insertIndex - 1
 
             self.view.Insert(insertIndex, FrameListViewItem(self.view, BindListItem, bind, True))
+            if (bind.IsLoadFileBind()):
+                self.OnLinkedFilesFound(binds=[bind])
 
     def OnNewBind(self, *args):
         if (self.Editor == None):
@@ -243,11 +247,13 @@ class EditBindFile(KeystoneEditFrame):
         self.Get()
         self.Model.WriteBindsToFile(self.Model.FilePath)
 
-    def OnLinkedFilesFound(self, *args):
-        for bind in self.Model.GetLoadFileBinds():
+    def OnLinkedFilesFound(self, binds = None, *args):
+        if (binds == None):
+            binds = self.Model.GetLoadFileBinds()
+        for bind in binds:
             for command in bind.GetLoadFileCommands():
                 targetPath = command.GetTargetFile()
-                TriggerOpenLinkedFileCallback(targetPath)
+                TriggerOpenLinkedFileCallback(targetPath, bind, sourceFile = self.Get(commitChanges = False))
         
 
     def Open(self, fileName = None):

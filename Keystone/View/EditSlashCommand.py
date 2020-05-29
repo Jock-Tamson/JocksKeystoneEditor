@@ -6,8 +6,7 @@ from tkinter.colorchooser import askcolor
 from Keystone.Model.SlashCommand import IsLoadFileCommand, SlashCommand
 from Keystone.Reference.CommandReference import LIST_OF_SLASH_COMMANDS
 from Keystone.Utility.KeystoneUtils import (AverageRGBValues, GetFileName,
-                                            RemoveOuterQuotes,
-                                            TriggerOpenLinkedFileCallback)
+                                            RemoveOuterQuotes)
 from Keystone.Widget.ColorPicker import ColorPicker
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
 from Keystone.Widget.KeystoneFormats import (FONT_SIZE, TEXT_FONT,
@@ -177,7 +176,7 @@ class SlashCommandEditor(KeystoneEditFrame):
         filePath = filedialog.askopenfilename(**options)
         if (filePath != ''):
             self.TextEntry.SetText("\"%s\"" % (filePath))
-            TriggerOpenLinkedFileCallback(filePath)
+            self.SetDirty() 
 
     def OnNewButton(self):
         options = {}
@@ -189,13 +188,13 @@ class SlashCommandEditor(KeystoneEditFrame):
         options['defaultextension'] = "txt"
         filePath = filedialog.asksaveasfilename(**options)
         if (filePath != ''):
-            self.TextEntry.SetText("\"%s\"" % (filePath))        
+            self.TextEntry.SetText("\"%s\"" % (filePath))  
+            self.SetDirty()      
             file = open(filePath, "w+")
             try:
                 file.write("")
             finally:
                 file.close()
-            TriggerOpenLinkedFileCallback(filePath)
 
     def __init__(self, parent, command: SlashCommand):
         KeystoneEditFrame.__init__(self, parent)

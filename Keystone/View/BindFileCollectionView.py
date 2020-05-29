@@ -7,12 +7,13 @@ from Keystone.Model.BindFileCollection import NEW_FILE, BindFileCollection
 from Keystone.Utility.KeystoneUtils import GetDirPathFromRoot, GetFileName
 from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame, KeystoneLabel
 from Keystone.Widget.KeystoneTree import CHAIN_TAG, EDITED_TAG, FILE_TAG, KeystoneTree
+from Keystone.Model.BindFile import BindFile
 
 
 class BindFileCollectionView(KeystoneFrame):
 
-    def _fillTree(self, path, collection):
-        self.File.set(path)
+    def _buildExpectedTree(self, path, collection):
+        result = []
         if (path == NEW_FILE):
             fileName = NEW_FILE
             directory = ""
@@ -21,31 +22,62 @@ class BindFileCollectionView(KeystoneFrame):
             fileName = GetFileName(path)
             directory = os.path.dirname(path)
             tags = (FILE_TAG, path, )
-        item = self.Tree.insert('', 'end', text=fileName, tags=tags)
+        result.append((0, fileName, tags))
         for keyBind, boundFiles in collection.KeyChains.items():
-            parent = self.Tree.insert(item, 'end', text='Loaded Files for ' + keyBind, tags=(CHAIN_TAG, keyBind))
+            result.append((1, 'Loaded Files for ' + keyBind, (CHAIN_TAG, keyBind)))
             for boundFile in boundFiles:
                 filePath = os.path.abspath(boundFile.FilePath)
                 fileName = GetDirPathFromRoot(directory, filePath)
-                self.Tree.insert(parent, 'end', text=fileName, tags=(FILE_TAG, filePath, ))
+                result.append((2, fileName, (FILE_TAG, filePath, )))
+
+        return result
+
+
+    def _fillTree(self, path, collection):
+        self.File.set(path)
+        expected = self._buildExpectedTree(path, collection)
+        parent = ['', ]
+        for level, text, tags in expected:
+            item = self.Tree.insert(parent[level], 'end', text=text, tags=tags)
+            if (len(parent) < (level + 2)):
+                parent.append(item)
+            else:
+                parent[level + 1] = item
+        self._tree = expected
         self.Tree.OpenCloseAll()
 
     def Reset(self):
-        self.Tree.delete(*self.Tree.get_children()) 
+        self.Tree.Reset()
+        self.Model = None
         self.Collection = None
 
-    def Load(self, path: str):
-        path = os.path.abspath(path)
+    def _doLoad(self, model):
+        if (model != None):
+            bindFile = BindFile(repr=self.Model.File.__repr__(), filePath=self.Model.File.FilePath)
+            boundFilesSource = [BindFile(repr = b.__repr__(), filePath = b.FilePath) for b in self.Model.GetBoundFiles()]
+            self.Collection = BindFileCollection()
+            self.Collection.Load(self.Model.FilePath, bindFile = bindFile, boundFilesSource = boundFilesSource)
+            path = self.Model.FilePath
+            if (path == None):
+                path = NEW_FILE
+            self._fillTree(self.Model.FilePath, self.Collection)
+        else:
+            self.Collection = None
+
+    def Load(self, path: str, ):
         self.Reset()
+        path = os.path.abspath(path)
         if (os.path.exists(path)):
-            self.Collection = BindFileCollection(path)
-            self._fillTree(path, self.Collection)
+            self.Model = BindFileCollection(path)
+        else:
+            self.Model = None
+        self._doLoad(self.Model)
 
     def New(self, defaults:bool = False):
         self.Reset()
-        self.Collection = BindFileCollection()
-        self.Collection.New(defaults)
-        self._fillTree(NEW_FILE, self.Collection)
+        self.Model = BindFileCollection()
+        self.Model.New(defaults)
+        self._doLoad(self.Model)
 
     def __init__(self, parent, showScroll = False, showBrowse = False):
 
@@ -85,6 +117,7 @@ class BindFileCollectionView(KeystoneFrame):
             directoryEdit.grid(column=0, row=0, sticky='nsew')
 
         self.Collection = None
+        self._tree = [(None,None,None)]
     
 if (__name__ == "__main__"):
     win = tk.Tk()

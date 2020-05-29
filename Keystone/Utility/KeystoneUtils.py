@@ -104,10 +104,10 @@ def SetOpenLinkedFileCallback(callback):
     global OpenLinkedFileCallback
     OpenLinkedFileCallback = callback
 
-def TriggerOpenLinkedFileCallback(path):
+def TriggerOpenLinkedFileCallback(path, bind, sourceFile):
     global OpenLinkedFileCallback
     if (OpenLinkedFileCallback != None):
-        t =  threading.Thread(name='openlinkedfilecallback_'+ path, target=OpenLinkedFileCallback, args=(path, )) 
+        t =  threading.Thread(name='openlinkedfilecallback_'+ path, target=OpenLinkedFileCallback, args=(path, bind, sourceFile)) 
         t.start()
 
 #https://shanetully.com/2013/08/cross-platform-deployment-of-python-applications-with-pyinstaller/

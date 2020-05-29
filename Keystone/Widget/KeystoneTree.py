@@ -25,6 +25,9 @@ class KeystoneTree(ttk.Treeview):
 
         return ids
 
+    def Reset(self):
+        self.delete(*self.get_children())
+
     def OpenCloseAll(self, close=False):
         children = self.GetAllChildren()
         for eachChild in children:

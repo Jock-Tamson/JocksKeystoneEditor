@@ -34,7 +34,7 @@ def GetKeyChains(bindFile: BindFile, path: str, result, boundFiles = None):
             boundPath = command.GetTargetFile()
             if (os.path.realpath (boundPath) == os.path.realpath (path)):
                 continue
-            boundKey = bind.GetKeyWithChord()
+            boundKey = bind.GetKeyWithChord(defaultNames=True)
             if (boundFiles == None):
                 if (os.path.exists(boundPath)):
                     boundFile = ReadBindsFromFile(boundPath)

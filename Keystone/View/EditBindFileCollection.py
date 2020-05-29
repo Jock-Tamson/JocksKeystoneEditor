@@ -164,8 +164,43 @@ class EditBindFileCollection(KeystoneEditFrame):
         if (self.SaveCallback != None):
             self.SaveCallback(self)
 
-    def _openLinkedFileCallback(self, path):
-        return        
+    def _openLinkedFileCallback(self, path, bind, sourceFile):
+        match = [(idx, item[0], item[1], item[2]) for idx, item in enumerate(self.viewFrame._tree) if (item[2][0] == FILE_TAG) and os.path.realpath(item[2][1]) == os.path.realpath(path)]
+        sourcePath = sourceFile.FilePath
+        sourceMatch = [(idx, item[0], item[1], item[2]) for idx, item in enumerate(self.viewFrame._tree) if (item[2][0] == FILE_TAG) and os.path.realpath(item[2][1]) == os.path.realpath(sourcePath)]
+        if (len(match) > 0):
+            matchLevel = match[0][1]
+            if (matchLevel == 0):
+                print("self load")
+            else:
+                headerIndex = match[0][0] - 1
+                headerLevel = 2
+                while (headerLevel != 1):
+                    chainHeader = self.viewFrame._tree[headerIndex]
+                    headerLevel = chainHeader[0]
+                    headerIndex = headerIndex - 1
+                headerKey = chainHeader[1].split(" ")[-1]
+                bindKey = bind.GetKeyWithChord(defaultNames=True)
+                if (bindKey == headerKey):
+                    print("No change")
+                else:
+                    sourceLevel = sourceMatch[0][1]
+                    if (sourceLevel == 0):
+                        print("remapped chain")
+                    else:
+                        print("Redirect in chain")
+        else:
+            #new file
+            if (len(sourceMatch) > 0):
+                sourceLevel = sourceMatch[0][1]
+                if (sourceLevel == 0):
+                    print("new chain")
+                else:
+                    print("extended chain")
+            else:
+                print("#new orphan")
+
+
 
     def __init__(self, parent, saveCallback = None):
 
