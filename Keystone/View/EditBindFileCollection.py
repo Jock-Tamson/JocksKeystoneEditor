@@ -12,6 +12,7 @@ from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
 from Keystone.Widget.KeystoneFormats import KeystoneFrame, KeystonePanedWindow
 from Keystone.Widget.KeystoneTree import (CHAIN_TAG, EDITED_TAG, FILE_TAG,
                                           KeystoneTree)
+from Keystone.Utility.KeystoneUtils import SetOpenLinkedFileCallback
 
 
 class EditBindFileCollection(KeystoneEditFrame):
@@ -70,41 +71,63 @@ class EditBindFileCollection(KeystoneEditFrame):
                 self.editor.OnSetDirty.append(self.SetEditedItem)
                 self.editor.OnSetClean.append(self.ClearEditedItem)
         elif (tags[0] == CHAIN_TAG):
-            key = tags[1]
-            keyChain = Keychain(self.viewFrame.Collection, key)
-            self.editor = EditKeychain(self.editFrame, keyChain)
+            self.lastItem = None
+            if (self.editor != None):
+                self.editor.grid_forget()
+                self.editor = None
+            return
+            #key = tags[1]
+            #keyChain = Keychain(self.viewFrame.Collection, key)
+            #self.editor = EditKeychain(self.editFrame, keyChain)
         self.editor.grid(row=0, column=0, sticky='nsew')
 
     def Reset(self):
         if (self.editor != None):
             self.editor.grid_forget()
         self.EditedItems = None
+        self.Model = None
         self.viewFrame.Reset()
 
-    def Load(self, path):
+    def Load(self, path = None, defaults: bool = False):
         self.Reset()
-        self.viewFrame.Load(path)
+
+        if (path == None):
+            self.viewFrame.New(defaults)
+        else:
+            self.viewFrame.Load(path)
+
+        self.Model = self.viewFrame.Collection
+
+        children = self.viewFrame.Tree.GetAllChildren() 
+        if (len(children) > 1):
+            self.Pane.insert(0, self.viewFrame)
+        else:
+            self.Pane.forget(self.viewFrame)
+
+        self.viewFrame.Tree.selection_set(children[0])
+        self.viewFrame.Tree.focus(children[0])
 
     def New(self, defaults: bool = False):
-        self.Reset()
-        self.viewFrame.New(defaults)
+        self.Load(defaults = defaults)
         self.EditedItems = {NEW_FILE : EditBindFile(self.editFrame, self.viewFrame.Collection.File)}
         self.SetDirty()
 
-    def Open(self):
-        options = {}
-        if (self.viewFrame.Collection != None):
-            filePath = self.viewFrame.Collection.File.FilePath
-        else:
-            filePath = None
-        if (filePath != None):
-            options['initialfile'] = filePath
-            options['initialdir'] = os.path.dirname(filePath)
-        options['title'] = "Open Keybind File"
-        options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
-        options['defaultextension'] = "txt"
-        options['multiple'] = False
-        fileName = filedialog.askopenfilename(**options)
+    def Open(self, fileName = None):
+        if (fileName == None):
+            options = {}
+            if (self.Model != None):
+                filePath = self.Model.FilePath
+            else:
+                filePath = None
+            if (filePath != None):
+                options['initialfile'] = filePath
+                options['initialdir'] = os.path.dirname(filePath)
+            options['title'] = "Open Keybind File"
+            options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
+            options['defaultextension'] = "txt"
+            options['multiple'] = False
+            fileName = filedialog.askopenfilename(**options)
+
         if (fileName != ''):
             self.Load(path=fileName)
 
@@ -137,9 +160,14 @@ class EditBindFileCollection(KeystoneEditFrame):
                     editor.Get()
             self.viewFrame.Collection.Save(filePath)
             self.Load(filePath)
-            
 
-    def __init__(self, parent):
+        if (self.SaveCallback != None):
+            self.SaveCallback(self)
+
+    def _openLinkedFileCallback(self, path):
+        return        
+
+    def __init__(self, parent, saveCallback = None):
 
         KeystoneEditFrame.__init__(self, parent)
 
@@ -147,18 +175,22 @@ class EditBindFileCollection(KeystoneEditFrame):
         self.editor = None
         self.selectedItem = None
         self.EditedItems = None
+        self.Model = None
+        self.SaveCallback = saveCallback
 
-        pane = KeystonePanedWindow(self, orient=tk.HORIZONTAL)
-        pane.pack(fill=tk.BOTH, expand=1)
+        self.Pane = KeystonePanedWindow(self, orient=tk.HORIZONTAL)
+        self.Pane.pack(fill=tk.BOTH, expand=1)
 
-        self.viewFrame = BindFileCollectionView(pane)
+        self.viewFrame = BindFileCollectionView(self.Pane)
         self.viewFrame.Tree.bind('<<TreeviewSelect>>', self.selectItem)
-        pane.add(self.viewFrame)
+        self.Pane.add(self.viewFrame)
     
-        self.editFrame = KeystoneFrame(pane, style='editStyle.TFrame', width=1000)
+        self.editFrame = KeystoneFrame(self.Pane, style='editStyle.TFrame', width=1000)
         self.editFrame.columnconfigure(0, weight=1)
         self.editFrame.rowconfigure(0, weight=1)
-        pane.add(self.editFrame)
+        self.Pane.add(self.editFrame)
+        
+        SetOpenLinkedFileCallback(self._openLinkedFileCallback)
     
 if (__name__ == "__main__"):
     win = tk.Tk()

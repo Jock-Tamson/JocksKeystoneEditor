@@ -46,7 +46,7 @@ class BindFileCollectionView(KeystoneFrame):
         self.Collection.New(defaults)
         self._fillTree(NEW_FILE, self.Collection)
 
-    def __init__(self, parent):
+    def __init__(self, parent, showScroll = False, showBrowse = False):
 
         KeystoneFrame.__init__(self, parent)
         self.columnconfigure(0, weight=1)
@@ -56,7 +56,8 @@ class BindFileCollectionView(KeystoneFrame):
 
         # creating a scrollbars      
         self.yscrlbr = ttk.Scrollbar(self)
-        self.yscrlbr.grid(column = 1, row = 1, sticky = 'ns')   
+        if showScroll:
+            self.yscrlbr.grid(column = 1, row = 1, sticky = 'ns')   
 
         #create tree
         self.Tree = KeystoneTree(self, selectmode=tk.BROWSE, yscrollcommand=self.yscrlbr.set)
@@ -79,7 +80,8 @@ class BindFileCollectionView(KeystoneFrame):
         browseFrame.columnconfigure(1, weight=0)
         self.File = tk.StringVar()
         directoryEdit = KeystoneLabel(browseFrame, textvariable=self.File)
-        directoryEdit.grid(column=0, row=0, sticky='nsew')
+        if showBrowse:
+            directoryEdit.grid(column=0, row=0, sticky='nsew')
 
         self.Collection = None
     
