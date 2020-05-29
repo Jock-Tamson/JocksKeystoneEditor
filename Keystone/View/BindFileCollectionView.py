@@ -23,11 +23,12 @@ class BindFileCollectionView(KeystoneFrame):
             tags = (FILE_TAG, path, )
         item = self.Tree.insert('', 'end', text=fileName, tags=tags)
         for keyBind, boundFiles in collection.KeyChains.items():
-            parent = self.Tree.insert(item, 'end', text='Chain for ' + keyBind, tags=(CHAIN_TAG, keyBind))
+            parent = self.Tree.insert(item, 'end', text='Loaded Files for ' + keyBind, tags=(CHAIN_TAG, keyBind))
             for boundFile in boundFiles:
                 filePath = os.path.abspath(boundFile.FilePath)
                 fileName = GetDirPathFromRoot(directory, filePath)
                 self.Tree.insert(parent, 'end', text=fileName, tags=(FILE_TAG, filePath, ))
+        self.Tree.OpenCloseAll()
 
     def Reset(self):
         self.Tree.delete(*self.Tree.get_children()) 

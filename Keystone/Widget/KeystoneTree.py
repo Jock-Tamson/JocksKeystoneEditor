@@ -25,6 +25,11 @@ class KeystoneTree(ttk.Treeview):
 
         return ids
 
+    def OpenCloseAll(self, close=False):
+        children = self.GetAllChildren()
+        for eachChild in children:
+            self.item(eachChild, open=not False)
+
     def GetAllTaggedChildren(self, tag):
 
         return [child for child in self.GetAllChildren() if tag in self.item(child)["tags"]]
