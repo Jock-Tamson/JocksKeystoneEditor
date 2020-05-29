@@ -1,0 +1,1 @@
+{"root": "MBUTTON \"em Recompiling Guidance Systems$$bind_load_file \"C:\\MBUTTON1.txt\"\"", "bound_files": [{"path": "root\\MBUTTON1.txt", "repr": "MBUTTON \"em crouch$$powexec_name Combat Jumping$$bind_load_file \"C:\\MBUTTON2.txt\"\""}, {"path": "root\\MBUTTON2.txt", "repr": "MBUTTON \"em crouch$$powexec_name Super Jump$$bind_load_file \"C:\\MBUTTON1.txt\"\""}]}

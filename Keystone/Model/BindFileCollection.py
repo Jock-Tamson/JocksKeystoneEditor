@@ -36,11 +36,16 @@ def GetKeyChains(bindFile: BindFile, path: str, result, boundFiles = None):
                 continue
             boundKey = bind.GetKeyWithChord()
             if (boundFiles == None):
-                boundFile = ReadBindsFromFile(boundPath)
+                if (os.path.exists(boundPath)):
+                    boundFile = ReadBindsFromFile(boundPath)
+                else:
+                    continue
             else:
                 match = [b for b in boundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundPath)]
                 if (len(match) > 0):
                     boundFile = match[0]
+                elif (os.path.exists(boundPath)):
+                    boundFile = ReadBindsFromFile(boundPath)
                 else:
                     continue
             if ( not addBoundFile(boundKey, boundFile)):
@@ -50,12 +55,14 @@ def GetKeyChains(bindFile: BindFile, path: str, result, boundFiles = None):
 
 class BindFileCollection():
 
-    def Load(self, filePath: str, bindFile = None):
+    def Load(self, filePath: str, bindFile = None, boundFilesSource = None):
         self.FilePath = filePath
         if (bindFile == None):
             bindFile = ReadBindsFromFile(filePath)
         self.File = bindFile
-        GetKeyChains(self.File, filePath, self.KeyChains)
+        if ((boundFilesSource != None) and (len(boundFilesSource) == 0)):
+            boundFilesSource = None
+        GetKeyChains(self.File, filePath, self.KeyChains, boundFilesSource)
 
     def New(self, defaults: bool = False):
             self.FilePath = None

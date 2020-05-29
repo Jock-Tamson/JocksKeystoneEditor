@@ -128,11 +128,12 @@ class EditBindFile(KeystoneEditFrame):
 
         finally:
             self.Loading = False
-        self.SetClean(self)
         if (bindFile.FilePath == None):
             self.PathLabel.configure(text="")
         else:
-            self.PathLabel.configure(text=bindFile.FilePath)
+            self.PathLabel.configure(text=bindFile.FilePath)  
+            if (os.path.exists(bindFile.FilePath)):              
+                self.SetClean(self)
         self.OnLinkedFilesFound()
         
     def _buildKeyWithChord(self, key, chord):        
@@ -154,6 +155,7 @@ class EditBindFile(KeystoneEditFrame):
                 self.view.Items = []
 
             #find place in list
+            index = -1
             itemsInList = [ (idx, self._buildKeyWithChord(item.Item.Bind.Key, item.Item.Bind.Chord)) for idx, item in enumerate(self.view.Items) ]
             newKeyWithChord = self._buildKeyWithChord(newKey, newChord)
             chords = ['']
@@ -211,11 +213,15 @@ class EditBindFile(KeystoneEditFrame):
         if (self.Editor == None):
             self.Editor = EditBindWindow(self, self.NewBindCallback)
 
-    def Get(self) -> BindFile:       
+    def Get(self, commitChanges = True) -> BindFile:       
         if (self.view.Items == None):
             return []
-        self.Model.Binds = [item.Item.Bind for item in self.view.Items if item.Item.Bind.Commands != None]
-        return self.Model
+        binds = [item.Item.Bind for item in self.view.Items if item.Item.Bind.Commands != None]
+        if commitChanges:
+            self.Model.Binds = binds
+            return self.Model
+        else:
+            return BindFile(binds=binds, filePath = self.Model.FilePath)
 
     def OnSave(self, *args):
         if ((self.Model.FilePath == None) or (self.Model.FilePath == '')):
@@ -268,7 +274,7 @@ class EditBindFile(KeystoneEditFrame):
         self.Load(file)
         self.SetDirty(self)
 
-    def PromptForFilePath(self)->str:
+    def PromptForFilePath(self, setToModel = True)->str:
         if (self.Model == None):
             return ''
         options = {}
@@ -277,9 +283,9 @@ class EditBindFile(KeystoneEditFrame):
         options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
         options['defaultextension'] = "txt"
         filePath = filedialog.asksaveasfilename(**options)
-        if (filePath != ''):
+        if ((filePath != '') and (setToModel)):
             self.Model.FilePath = filePath
-            self.PathLabel.configure(text=self.Model.FilePath)
+        self.PathLabel.configure(text=self.Model.FilePath)
 
         return filePath
 
