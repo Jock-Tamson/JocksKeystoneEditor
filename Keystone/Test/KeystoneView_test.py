@@ -75,7 +75,7 @@ class TestEditBindFile(unittest.TestCase):
 
         self.assertEqual(actual.__repr__(), file.__repr__())
 
-       # tk.mainloop()
+       #tk.mainloop()
         win.destroy()
         
 class TestBindFileCollectionView(unittest.TestCase):
@@ -100,6 +100,28 @@ class TestEditBindFileCollection(unittest.TestCase):
         target.pack(fill=tk.BOTH, expand=True)
         #viewFrame.New()
         target.Load('.\\TestReferences\\Jock Tamson\\keybinds.txt')
+
+        #tk.mainloop()
+        win.destroy()
+
+    def test_EditBindFileCollectionSingleFile(self):
+        
+        win = tk.Tk()
+        target = EditBindFileCollection(win)
+        target.pack(fill=tk.BOTH, expand=True)
+        #viewFrame.New()
+        target.Load('.\\TestReferences\\keybinds.txt')
+
+        #tk.mainloop()
+        win.destroy()
+
+    def test_EditBindFileCollectionNew(self):
+        
+        win = tk.Tk()
+        target = EditBindFileCollection(win)
+        target.pack(fill=tk.BOTH, expand=True)
+        #viewFrame.New()
+        target.New(defaults=False)
 
         #tk.mainloop()
         win.destroy()
