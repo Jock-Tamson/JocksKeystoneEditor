@@ -114,3 +114,6 @@ class Bind():
         key = self.GetKeyWithChord()
         commands = self.GetCommands()
         return "%s %s" % (key, commands)
+
+    def Clone(self):
+        return Bind(repr=self.__repr__())

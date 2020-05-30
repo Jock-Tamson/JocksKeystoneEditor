@@ -7,7 +7,6 @@ from Keystone.Model.BindFile import (BindFile, GetDefaultBindForKey,
                                      ReadBindsFromFile)
 from Keystone.Model.BindFileCollection import BindFileCollection, GetKeyChains
 from Keystone.Model.Keychain import Keychain
-from Keystone.Model.Keylink import Keylink
 from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.KeyNames import CHORD_KEYS, KEY_NAMES
 from Keystone.Utility.KeystoneUtils import (AverageRGBValues, GetFileName,
@@ -235,6 +234,16 @@ class TestSlashCommand(unittest.TestCase):
         target.SetTargetFile(".\\NewPath\\Jock Tamson\\MouseChord2.txt")
         self.assertEqual(target.GetTargetFile(), os.path.abspath(".\\NewPath\\Jock Tamson\\MouseChord2.txt"), "Did not set expected TargetFile")
 
+    def test_Clone(self):
+        target = SlashCommand(repr="say This test failed")
+        actual = target.Clone()
+        actual.Name = 'em'
+        actual.Text = 'This test passed'
+        self.assertNotEqual(actual.Name, target.Name, 'Name not different')
+        self.assertNotEqual(actual.Text, target.Text, 'Text not different')
+        self.assertEqual(actual.Name, 'em', 'Name not changed')
+        self.assertEqual(actual.Text, 'This test passed', 'Text not changed')
+
 class TestBind(unittest.TestCase):
 
     def test__repr__(self):
@@ -334,6 +343,28 @@ class TestBind(unittest.TestCase):
         actual = target.GetKeyWithChord(defaultNames=True)
         self.assertEqual(actual, expected, 'Did not get expected defaulted chorded nonsense')
 
+    def test_Clone(self):
+        target = Bind(repr = "SHIFT+A \"say This test failed $$ emote No!\"")
+        actual = target.Clone()
+        actual.Key = "B"
+        actual.Chord = "ALT"
+        actual.Commands[0].Name = "em"
+        actual.Commands[0].Text = "This test passed"
+        actual.Commands[1].Name = "say"
+        actual.Commands[1].Text = "Yay!"
+        self.assertNotEqual(actual.Key, target.Key, 'Key not different')
+        self.assertNotEqual(actual.Chord, target.Chord, 'Chord not different')
+        self.assertNotEqual(actual.Commands[0].Name, target.Commands[0].Name, 'Commands[0].Name not different')
+        self.assertNotEqual(actual.Commands[0].Text, target.Commands[0].Text, 'Commands[0].Text not different')
+        self.assertNotEqual(actual.Commands[1].Name, target.Commands[1].Name, 'Commands[1].Name not different')
+        self.assertNotEqual(actual.Commands[1].Text, target.Commands[1].Text, 'Commands[1].Text not different')
+        self.assertEqual(actual.Key, "B", 'Key not changed')
+        self.assertEqual(actual.Chord, "ALT", 'Chord not changed')
+        self.assertEqual(actual.Commands[0].Name, "em", 'Commands[0].Name not changed')
+        self.assertEqual(actual.Commands[0].Text, "This test passed", 'Commands[0].Text not changed')
+        self.assertEqual(actual.Commands[1].Name, "say", 'Commands[1].Name not changed')
+        self.assertEqual(actual.Commands[1].Text, "Yay!", 'Commands[1].Text not changed')
+
 
 class TestBindFile(unittest.TestCase):
 
@@ -343,6 +374,38 @@ class TestBindFile(unittest.TestCase):
         target = BindFile(binds)
         actual = str(target)
         self.assertEqual(actual, expected)
+
+    def test_Clone(self):
+        input = "A \"say This test failed\"\nB \"emote No!\""
+        target = BindFile(filePath="keybinds.txt", repr=input)
+        actual = target.Clone()
+        actual.FilePath = "new_keybinds.text"
+        actual.Binds[0].Key = "C"
+        actual.Binds[0].Chord = "SHIFT"
+        actual.Binds[0].Commands[0].Name = "em"
+        actual.Binds[0].Commands[0].Text = "This test passed"
+        actual.Binds[1].Key = "D"
+        actual.Binds[1].Chord = "ALT"
+        actual.Binds[1].Commands[0].Name = "say"
+        actual.Binds[1].Commands[0].Text = "Yes!"
+        self.assertNotEqual(actual.FilePath, target.FilePath, "FilePath not different")
+        self.assertNotEqual(actual.Binds[0].Key, target.Binds[0].Key, "Binds[0].Key not different")
+        self.assertNotEqual(actual.Binds[0].Chord, target.Binds[0].Chord, "Binds[0].Chord not different")
+        self.assertNotEqual(actual.Binds[0].Commands[0].Name, target.Binds[0].Commands[0].Name, "Binds[0].Command[0].Name not different")
+        self.assertNotEqual(actual.Binds[0].Commands[0].Text, target.Binds[0].Commands[0].Text, "Binds[0].Command[0].Text not different")
+        self.assertNotEqual(actual.Binds[1].Key, target.Binds[1].Key, "Binds[0].Key not different")
+        self.assertNotEqual(actual.Binds[1].Chord, target.Binds[1].Chord, "Binds[0].Chord not different")
+        self.assertNotEqual(actual.Binds[1].Commands[0].Name, target.Binds[1].Commands[0].Name, "Binds[0].Command[0].Name not different")
+        self.assertNotEqual(actual.Binds[1].Commands[0].Text, target.Binds[1].Commands[0].Text, "Binds[0].Command[0].Text not different")
+        self.assertEqual(actual.FilePath, "new_keybinds.text", "FilePath not different")
+        self.assertEqual(actual.Binds[0].Key, "C", "Binds[0].Key not different")
+        self.assertEqual(actual.Binds[0].Chord, "SHIFT", "Binds[0].Chord not different")
+        self.assertEqual(actual.Binds[0].Commands[0].Name, "em", "Binds[0].Command[0].Name not different")
+        self.assertEqual(actual.Binds[0].Commands[0].Text, "This test passed", "Binds[0].Command[0].Text not different")
+        self.assertEqual(actual.Binds[1].Key, "D", "Binds[0].Key not different")
+        self.assertEqual(actual.Binds[1].Chord, "ALT", "Binds[0].Chord not different")
+        self.assertEqual(actual.Binds[1].Commands[0].Name, "say", "Binds[0].Command[0].Name not different")
+        self.assertEqual(actual.Binds[1].Commands[0].Text, "Yes!", "Binds[0].Command[0].Text not different")
 
     def test_FromString(self):
         input = "A \"say This test passed\"\nB \"emote Yay!\""
@@ -460,32 +523,51 @@ class TestBindFileCollection(unittest.TestCase):
     def test_GetBoundPaths(self):
         path = ".\\TestReferences\\Field Test\\keybinds.txt"
         target = ReadBindsFromFile(path)
-        actual = {}
-        GetKeyChains(target, path, actual)
+        actual = GetKeyChains(target, path)
         self.assertEqual(len(actual), 3)
-        self.assertEqual(len(actual["I"]), 2)
-        self.assertEqual(len(actual["MBUTTON"]), 2)
-        self.assertEqual(len(actual["SHIFT+NUMPAD0"]), 1)
+        self.assertEqual(actual[0].Key, "I")
+        self.assertEqual(actual[0].Chord, "")
+        self.assertEqual(len(actual[0].BoundFiles), 2)
+        self.assertEqual(actual[1].Key, "MBUTTON")
+        self.assertEqual(actual[1].Chord, "")
+        self.assertEqual(len(actual[1].BoundFiles), 2)
+        self.assertEqual(actual[2].Key, "NUMPAD0")
+        self.assertEqual(actual[2].Chord, "SHIFT")
+        self.assertEqual(len(actual[2].BoundFiles), 1)
 
     def test_NoBoundPaths(self):
         path = ".\\TestReferences\\Soda Juice\\keybinds.txt"
         target = ReadBindsFromFile(path)
-        actual = {}
-        GetKeyChains(target, path, actual)
-        self.assertEqual(len(actual), 0)
+        actual = GetKeyChains(target, path)
+        self.assertEqual(actual, None)
 
     def test_Load(self):
-        target = BindFileCollection(".\\TestReferences\\Field Test\\keybinds.txt")
-        self.assertEqual(len(target.KeyChains), 3)
-        self.assertEqual(len(target.KeyChains["I"]), 2)
-        self.assertEqual(len(target.KeyChains["MBUTTON"]), 2)
-        self.assertEqual(len(target.KeyChains["SHIFT+NUMPAD0"]), 1)
+        target = BindFileCollection()
+        target.Load(".\\TestReferences\\Field Test\\keybinds.txt")
+        actual = target.KeyChains
+        self.assertEqual(len(actual), 3)
+        self.assertEqual(actual[0].Key, "I")
+        self.assertEqual(actual[0].Chord, "")
+        self.assertEqual(len(actual[0].BoundFiles), 2)
+        self.assertEqual(actual[1].Key, "MBUTTON")
+        self.assertEqual(actual[1].Chord, "")
+        self.assertEqual(len(actual[1].BoundFiles), 2)
+        self.assertEqual(actual[2].Key, "NUMPAD0")
+        self.assertEqual(actual[2].Chord, "SHIFT")
+        self.assertEqual(len(actual[2].BoundFiles), 1)
+
 
     def test_NonCircularChain(self):
-        target = BindFileCollection(".\\TestReferences\\Jock Tamson\\keybinds.txt")
-        self.assertEqual(len(target.KeyChains), 2)
-        self.assertEqual(len(target.KeyChains["MBUTTON"]), 2)
-        self.assertEqual(len(target.KeyChains["MouseChord"]), 4)
+        target = BindFileCollection()
+        target.Load(".\\TestReferences\\Jock Tamson\\keybinds.txt")
+        actual = target.KeyChains
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].Key, "MBUTTON")
+        self.assertEqual(actual[0].Chord, "")
+        self.assertEqual(len(actual[0].BoundFiles), 2)
+        self.assertEqual(actual[1].Key, "MOUSECHORD")
+        self.assertEqual(actual[1].Chord, "")
+        self.assertEqual(len(actual[1].BoundFiles), 4)
 
     def test_RepointBindFileCollection(self):
 
@@ -503,7 +585,8 @@ class TestBindFileCollection(unittest.TestCase):
                         self.assertEqual(actual, expected[idx], "Did not find expected path for idx " + str(idx))
                         idx = idx + 1
 
-        target = BindFileCollection(".\\TestReferences\\Field Test\\keybinds.txt")
+        target = BindFileCollection()
+        target.Load(".\\TestReferences\\Field Test\\keybinds.txt")
         target.RepointFilePaths(".\\NewPath\\Field Test\\keybinds.txt")
         expected =  [os.path.abspath(p) for p in [
             "./NewPath/Field Test/I1.txt", 
@@ -516,7 +599,8 @@ class TestBindFileCollection(unittest.TestCase):
             "./NewPath/Field Test/MBUTTON1.txt"]]
         _compare()
         
-        target = BindFileCollection(".\\TestReferences\\Field Test\\keybinds.txt")
+        target = BindFileCollection()
+        target.Load(".\\TestReferences\\Field Test\\keybinds.txt")
         target.RepointFilePaths(".\\TestReferences\\Field Test\\new_keybinds.txt")
         expected =  [os.path.abspath(p) for p in [
             "./TestReferences/Field Test/I1(1).txt", 
@@ -545,11 +629,13 @@ class TestBindFileCollection(unittest.TestCase):
         if (path.exists(filePath)):
             remove(filePath)
         try:
-            target = BindFileCollection(collectionFilePath)
+            target = BindFileCollection()
+            target.Load(collectionFilePath)
             target.Serialize(filePath)
             target = BindFileCollection()
             target.Deserialize(filePath)
-            expected = BindFileCollection(collectionFilePath)
+            expected = BindFileCollection()
+            expected.Load(collectionFilePath)
             expected.RepointFilePaths("C:\\keybinds.txt", True)
             self.assertEqual(target.File.FilePath, expected.File.FilePath, "Unexpedted name following round trip")
             self.assertEqual(target.File.__repr__(), expected.File.__repr__(), "Unexpected repr following round trip")
@@ -562,208 +648,33 @@ class TestBindFileCollection(unittest.TestCase):
         finally:
             if (path.exists(filePath)):
                 remove(filePath)
-
-class TestKeylink(unittest.TestCase):
-
-    def test_init(self):
-        refFilePath = "./TestReferences/Field Test/I1.txt"
-        bindFile = ReadBindsFromFile(refFilePath)
-        target = Keylink(key="I", chord="", bindFile=bindFile)
-        actual = target.FilePath
-        expected = os.path.abspath(refFilePath)
-        self.assertEqual(actual, expected, "Unexpected FilePath")
-        actual = target.Key
-        expected = "I"
-        self.assertEqual(actual, expected, "Unexpected Key")
-        actual = target.Chord
-        expected = ""
-        self.assertEqual(actual, expected, "Unexpected Chord")
-        actual = target.Bind.__repr__()
-        expected = "I \"powexec_name Radiation Infection$$bind_load_file \".\\TestReferences\\Field Test\\I2.txt\"\""
-        self.assertEqual(actual, expected, "Unexptected Bind")
-        actual = target.Command.__repr__()
-        expected = "bind_load_file \".\\TestReferences\\Field Test\\I2.txt\""
-        self.assertEqual(actual, expected, "Unexpected Command")
-        actual = target.TargetFilePath
-        expected = os.path.abspath("./TestReferences/Field Test/I2.txt")
-        self.assertEqual(actual, expected, "Unexpected TargetFilePath")
-
-    def test_ChangeKey(self):
-        refFilePath = "./TestReferences/Field Test/I1.txt"
-        bindFile = ReadBindsFromFile(refFilePath)
-        target = Keylink(key="I", chord="", bindFile=bindFile)
-        actual = target.Key
-        expected = "I"
-        self.assertEqual(actual, expected, "Unexpected Key")
-        expected = "J"
-        target.ChangeKey(expected)
-        actual = target.Key
-        self.assertEqual(actual, expected, "Unexpected changed Key")
-        actual = target.Bind.Key
-        self.assertEqual(actual, expected, "Unexpected changed Key in Bind")
-
-    def test_ChangeChord(self):
-        refFilePath = "./TestReferences/Field Test/I1.txt"
-        bindFile = ReadBindsFromFile(refFilePath)
-        target = Keylink(key="I", chord="", bindFile=bindFile)
-        actual = target.Chord
-        expected = ""
-        self.assertEqual(actual, expected, "Unexpected Chord")
-        expected = "SHIFT"
-        target.ChangeChord(expected)
-        actual = target.Chord
-        self.assertEqual(actual, expected, "Unexpected changed Chord")
-        actual = target.Bind.Chord
-        self.assertEqual(actual, expected, "Unexpected changed Chord in Bind")
-
-    def test_ChangeTargetFilePath(self):
-        refFilePath = "./TestReferences/Field Test/I1.txt"
-        bindFile = ReadBindsFromFile(refFilePath)
-        target = Keylink(key="I", chord="", bindFile=bindFile)
-        actual = target.TargetFilePath
-        expected = os.path.abspath("./TestReferences/Field Test/I2.txt")
-        self.assertEqual(actual, expected, "Unexpected TargetFilePath")
-        expected = os.path.abspath("./TestReferences/Field Test/Toggles/I2.txt")
-        target.ChangeTargetFilePath(expected)
-        actual = target.TargetFilePath
-        self.assertEqual(actual, expected, "Unexpected changed TargetFilePath")
-        actual = RemoveOuterQuotes(target.Command.Text)
-        self.assertEqual(actual, expected, "Unexpected changed TargetFilePath in Command")
-        
+     
 class TestKeychain(unittest.TestCase):
 
-    def test_init(self):
-        refFilePath = "./TestReferences/Field Test/keybinds.txt"
-        collection = BindFileCollection(refFilePath)
-        target = Keychain(collection, "I")
-        actual = target.Key
-        expected = "I"
-        self.assertEqual(actual, expected, "Unexpected Key")
-        actual = target.Chord
-        expected = ""
-        self.assertEqual(actual, expected, "Unexpected Chord")
-        actual = len(target.Links)
-        expected = 2
-        self.assertEqual(actual, expected, "Unexpected Links length")
-        actual = target.Links[1].TargetFilePath
-        expected = target.Links[0].FilePath
-        self.assertEqual(actual, expected, "Unexpected file paths")
-        actual = target.Anchor.FilePath
-        expected = os.path.abspath(refFilePath)
-        self.assertEqual(actual, expected, "Unexpected anchor file path")
-
-    def test_ChangeKey(self):
-        refFilePath = "./TestReferences/Field Test/keybinds.txt"
-        collection = BindFileCollection(refFilePath)
-        target = Keychain(collection, "I")
-        actual = target.Key
-        expected = "I"
-        self.assertEqual(actual, expected, "Unexpected Key")
-        expected = "J"
-        target.ChangeKey(expected)
-        actual = target.Key
-        self.assertEqual(actual, expected, "Unexpected changed Key")
-        actual = target.Anchor.Key
-        self.assertEqual(actual, expected, "Unexpected changed Key in anchor")
-        for idx, link in enumerate(target.Links):
-            actual = link.Key
-            self.assertEqual(actual, expected, "Unexpected changed Key in Link " + str(idx))
-        self.assertTrue("J" in collection.KeyChains)
-        self.assertFalse("I" in collection.KeyChains)
-
-    def test_ChangeChord(self):
-        refFilePath = "./TestReferences/Field Test/keybinds.txt"
-        collection = BindFileCollection(refFilePath)
-        target = Keychain(collection, "I")
-        actual = target.Chord
-        expected = ""
-        self.assertEqual(actual, expected, "Unexpected Chord")
-        expected = "SHIFT"
-        target.ChangeChord(expected)
-        actual = target.Chord
-        self.assertEqual(actual, expected, "Unexpected changed Chord")
-        actual = target.Anchor.Chord
-        self.assertEqual(actual, expected, "Unexpected changed Chord in anchor")
-        for idx, link in enumerate(target.Links):
-            actual = link.Chord
-            self.assertEqual(actual, expected, "Unexpected changed Chord in Link " + str(idx))
-        self.assertTrue("SHIFT+I" in collection.KeyChains)
-        self.assertFalse("I" in collection.KeyChains)
-
-    def test_NewLink(self):
-        refFilePath = "./TestReferences/Field Test/keybinds.txt"
-        collection = BindFileCollection(refFilePath)
-        chain = Keychain(collection, "I")
-        newFilePath = "./TestReferences/Field Test/I3.txt"
-        target = chain.Newlink(newFilePath)
-        actual = target.FilePath
-        expectedPath = os.path.abspath(newFilePath)
-        self.assertEqual(actual, expectedPath, "Unexpected FilePath")
-        actual = target.Key
-        expected = "I"
-        self.assertEqual(actual, expected, "Unexpected Key")
-        actual = target.Chord
-        expected = ""
-        self.assertEqual(actual, expected, "Unexpected Chord")
-        actual = target.Bind.__repr__()
-        expected = "I \"bind_load_file \"%s\"\"" % expectedPath
-        self.assertEqual(actual, expected, "Unexptected Bind")
-        actual = target.Command.__repr__()
-        expected = "bind_load_file \"%s\"" % expectedPath
-        self.assertEqual(actual, expected, "Unexpected Command")
-        actual = target.TargetFilePath
-        self.assertEqual(actual, expectedPath, "Unexpected TargetFilePath")
-
-    def test_Relink(self):
-
-        def _testLinks():
-            for idx, testCase in enumerate(expected):
-                expectedFilePath = os.path.abspath(testCase[0])
-                expectedTargetFilePath = os.path.abspath(testCase[1])
-                actualFilePath = target.Links[idx].FilePath
-                actualTargetFilePath = target.Links[idx].TargetFilePath
-                self.assertEqual(actualFilePath, expectedFilePath, "Unexpected FilePath in link " + str(idx))
-                self.assertEqual(actualTargetFilePath, expectedTargetFilePath, "Unexpected TargetFilePath in link " + str(idx))
-
-        refFilePath = "./TestReferences/Field Test/keybinds.txt"
-        collection = BindFileCollection(refFilePath)
-        target = Keychain(collection, "I")
-        newFilePath = "./TestReferences/Field Test/I3.txt"
-        newLink = target.Newlink(newFilePath)
-        target.Links.insert(1, newLink)
-        target.Relink()
-        expectedTargetFilePath = os.path.abspath("./TestReferences/Field Test/I1.txt")
-        actualTargetFilePath = target.Anchor.TargetFilePath
-        self.assertEqual(actualTargetFilePath, expectedTargetFilePath)
-        expected = (
-            ("./TestReferences/Field Test/I1.txt", "./TestReferences/Field Test/I3.txt"),
-            ("./TestReferences/Field Test/I3.txt", "./TestReferences/Field Test/I2.txt"),
-            ("./TestReferences/Field Test/I2.txt", "./TestReferences/Field Test/I1.txt")
-        )
-        _testLinks()
-        
-        newFilePath = "./TestReferences/Field Test/I4.txt"
-        newLink = target.Newlink(newFilePath)
-        target.Links.insert(0, newLink)
-        target.Relink()
-        expectedTargetFilePath = os.path.abspath("./TestReferences/Field Test/I4.txt")
-        actualTargetFilePath = target.Anchor.TargetFilePath
-        self.assertEqual(actualTargetFilePath, expectedTargetFilePath)
-        expected = (
-            ("./TestReferences/Field Test/I4.txt", "./TestReferences/Field Test/I1.txt"),
-            ("./TestReferences/Field Test/I1.txt", "./TestReferences/Field Test/I3.txt"),
-            ("./TestReferences/Field Test/I3.txt", "./TestReferences/Field Test/I2.txt"),
-            ("./TestReferences/Field Test/I2.txt", "./TestReferences/Field Test/I4.txt")
-        )
-        _testLinks()
-
-    def test_GetNewFileName(self):
-        refFilePath = "./TestReferences/Field Test/keybinds.txt"
-        collection = BindFileCollection(refFilePath)
-        target = Keychain(collection, "I")
-        actual = target.GetNewFileName()
-        expected = os.path.abspath("./TestReferences/Field Test/I3.txt")
+    def test_Keychain(self):
+        key = "MOUSECHORD"
+        chord = "SHIFT"
+        file1 = BindFile(repr="SHIFT+MOUSECHORD bind_load_file \"MOUSECHORD2.txt\"", filePath="MOUSECHORD1.txt")
+        file2 = BindFile(repr="SHIFT+MOUSECHORD bind_load_file \"MOUSECHORD1.txt\"", filePath="MOUSECHORD2.txt")
+        target = Keychain(key=key, chord=chord, boundFiles=[file1, file2])
+        actual = target.__repr__()
+        expected = '{\'key\': \'MOUSECHORD\', \'chord\': \'SHIFT\', \'bound_files\': [{\'path\': \'MOUSECHORD1.txt\', \'repr\': \'SHIFT+MOUSECHORD "bind_load_file "MOUSECHORD2.txt""\'}, {\'path\': \'MOUSECHORD2.txt\', \'repr\': \'SHIFT+MOUSECHORD "bind_load_file "MOUSECHORD1.txt""\'}]}'
         self.assertEqual(actual, expected)
+        expected2 = expected.replace('MOUSECHORD', 'NUMPAD0', 1)
+        expected2 = expected.replace('SHIFT', '', 1)
+        target = Keychain(repr=expected2)
+        actual = target.__repr__()
+        self.assertEqual(actual, expected2)
+        clone = target.Clone()
+        clone.Key = 'MOUSECHORD'
+        clone.Chord = 'SHIFT'
+        actual = clone.__repr__()
+        self.assertEqual(actual, expected)
+        actual = target.__repr__()
+        self.assertEqual(actual, expected2)
+
+
+
 
 if __name__ == "__main__":
     unittest.main()

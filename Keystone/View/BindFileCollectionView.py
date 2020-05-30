@@ -23,7 +23,12 @@ class BindFileCollectionView(KeystoneFrame):
             directory = os.path.dirname(path)
             tags = (FILE_TAG, path, )
         result.append((0, fileName, tags))
-        for keyBind, boundFiles in collection.KeyChains.items():
+
+        if (collection.KeyChains == None):
+            return result
+        for keyChain in collection.KeyChains:
+            keyBind = keyChain.GetKeyWithChord()
+            boundFiles = keyChain.BoundFiles
             result.append((1, 'Loaded Files for ' + keyBind, (CHAIN_TAG, keyBind)))
             for boundFile in boundFiles:
                 filePath = os.path.abspath(boundFile.FilePath)
@@ -60,7 +65,7 @@ class BindFileCollectionView(KeystoneFrame):
             path = self.Model.FilePath
             if (path == None):
                 path = NEW_FILE
-            self._fillTree(self.Model.FilePath, self.Collection)
+            self._fillTree(path, self.Collection)
         else:
             self.Collection = None
 
@@ -68,7 +73,8 @@ class BindFileCollectionView(KeystoneFrame):
         self.Reset()
         path = os.path.abspath(path)
         if (os.path.exists(path)):
-            self.Model = BindFileCollection(path)
+            self.Model = BindFileCollection()
+            self.Model.Load(path)
         else:
             self.Model = None
         self._doLoad(self.Model)

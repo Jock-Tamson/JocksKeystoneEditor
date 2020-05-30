@@ -38,6 +38,9 @@ class BindFile():
             return ''
         return self.LINE_SEPARATOR.join([str(b) for b in self.Binds])
 
+    def Clone(self):
+        return BindFile(filePath=self.FilePath, repr=self.__repr__())
+
     #Overwrite or create a file from the binds in the object
     def WriteBindsToFile(self, filePath: str = None):
         if (filePath == None):

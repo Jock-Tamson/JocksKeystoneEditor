@@ -7,7 +7,6 @@ from Keystone.Model.BindFileCollection import NEW_FILE, BindFileCollection
 from Keystone.Model.Keychain import Keychain
 from Keystone.View.BindFileCollectionView import BindFileCollectionView
 from Keystone.View.EditBindFile import EditBindFile
-from Keystone.View.EditKeychain import EditKeychain
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
 from Keystone.Widget.KeystoneFormats import KeystoneFrame, KeystonePanedWindow
 from Keystone.Widget.KeystoneTree import (CHAIN_TAG, EDITED_TAG, FILE_TAG,

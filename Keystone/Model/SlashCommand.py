@@ -165,6 +165,9 @@ class SlashCommand():
             result = "%s %s" % (self.FormattedName(), self.FormattedText())
         return result
 
+    def Clone(self):
+        return SlashCommand(repr=self.__repr__())
+
 def IsLoadFileCommand(command)-> bool:
     return (LOAD_FILE_COMMANDS.__contains__(command))
 

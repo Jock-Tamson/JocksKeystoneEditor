@@ -10,15 +10,12 @@ from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Model.Bind import Bind
 from Keystone.Model.BindFile import ReadBindsFromFile
 from Keystone.Model.BindFileCollection import BindFileCollection
-from Keystone.Model.Keylink import Keylink
 from Keystone.Model.Keychain import Keychain
 from Keystone.View.EditSlashCommand import SlashCommandEditor
 from Keystone.View.EditBind import EditBindWindow
 from Keystone.View.EditBindFile import EditBindFile
 from Keystone.View.BindFileCollectionView import BindFileCollectionView
 from Keystone.View.EditBindFileCollection import EditBindFileCollection
-from Keystone.View.EditKeylink import EditKeylink
-from Keystone.View.EditKeychain import EditKeychain
 from Keystone.Windows.KeystoneWalkthroughPages import ShowIntroWalkthrough
 from Keystone.Windows.BindFileEditorWindow import BindFileEditorWindow
 from Keystone.Windows.KeystoneAbout import ShowHelpAbout
@@ -122,36 +119,6 @@ class TestEditBindFileCollection(unittest.TestCase):
         target.pack(fill=tk.BOTH, expand=True)
         #viewFrame.New()
         target.New(defaults=False)
-
-        #tk.mainloop()
-        win.destroy()
-
-class TestEditKeyLink(unittest.TestCase):
-
-    def test_EditKeyLink(self):
-        
-        win = tk.Tk()
-        refFilePath = "./TestReferences/Field Test/keybinds.txt"
-        collection = BindFileCollection(refFilePath)
-        keychain = Keychain(collection, "I")
-        bindFile = ReadBindsFromFile("./TestReferences/Field Test/I1.txt")
-        target = Keylink(bindFile, "I")
-        editor = EditKeylink(win, target, keychain)
-        editor.pack(anchor='n', fill='both', expand=True, side='left')
-
-        #tk.mainloop()
-        win.destroy()
-
-class TestEditKeyChain(unittest.TestCase):
-
-    def test_EditKeyChain(self):
-        
-        win = tk.Tk()
-        refFilePath = "./TestReferences/Field Test/keybinds.txt"
-        collection = BindFileCollection(refFilePath)
-        target = Keychain(collection, "I")
-        editor = EditKeychain(win, target)
-        editor.pack(anchor='n', fill='both', expand=True, side='left')
 
         #tk.mainloop()
         win.destroy()

@@ -1,57 +1,69 @@
+import ast
 import os as os
 import json as json
 import tempfile
 
+from Keystone.Model.Bind import Bind
 from Keystone.Model.BindFile import BindFile, NewBindFile, ReadBindsFromFile
+from Keystone.Model.Keychain import Keychain, BOUND_FILES, NONE, PATH, REPR
+
 from Keystone.Utility.KeystoneUtils import GetUniqueFilePath, RemoveOuterQuotes, RemoveStartAndEndDirDelimiters
 
 NEW_FILE = "<New File>"
 ROOT = "root"
-BOUND_FILES = "bound_files"
-PATH = "path"
-REPR = "repr"
+DESCRIPTION = 'description'
+KEY_CHAINS = 'key_chains'
 
-def GetKeyChains(bindFile: BindFile, path: str, result, boundFiles = None):
 
-    def addBoundFile(keyToAdd: str, fileToAdd: BindFile) -> bool:
-        if keyToAdd in result:
-            pathToAdd = os.path.abspath(fileToAdd.FilePath)
-            if (not [b.FilePath for b in result[keyToAdd]].__contains__(pathToAdd)):
-                result[keyToAdd].append(fileToAdd)
+
+def getBoundFiles(path, bind: Bind, foundFiles, boundFiles):
+    for command in bind.GetLoadFileCommands():
+        boundPath = command.GetTargetFile()
+        if (os.path.realpath (boundPath) == os.path.realpath (path)):
+            continue
+        if (boundFiles == None):
+            if (os.path.exists(boundPath)):
+                boundFile = ReadBindsFromFile(boundPath)
             else:
-                return False
+                continue
         else:
-            result[keyToAdd] = [fileToAdd]
-        return True
+            match = [b for b in boundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundPath)]
+            if (len(match) > 0):
+                boundFile = match[0]
+            elif (os.path.exists(boundPath)):
+                boundFile = ReadBindsFromFile(boundPath)
+            else:
+                continue
+        match = [b for b in foundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundFile.FilePath)]
+        if (len(match) > 0):
+            continue
+        foundFiles.append(boundFile.Clone())
+        for chainBind in boundFile.GetLoadFileBinds():
+                for foundFile in getBoundFiles(path, chainBind, foundFiles, boundFiles):
+                    match = [b for b in foundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundFile.FilePath)]
+                    if (len(match) > 0):
+                        continue
+                    foundFiles.append(foundFile)
+        
+    return foundFiles
+
+def GetKeyChains(bindFile: BindFile, path: str, boundFiles = None):
+
+    result = []   
 
     if (path == None):
         path = ""
     else:
-        path = os.path.abspath(path)
-        
+        path = os.path.abspath(path) 
     for bind in bindFile.GetLoadFileBinds():
-        for command in bind.GetLoadFileCommands():
-            boundPath = command.GetTargetFile()
-            if (os.path.realpath (boundPath) == os.path.realpath (path)):
-                continue
-            boundKey = bind.GetKeyWithChord(defaultNames=True)
-            if (boundFiles == None):
-                if (os.path.exists(boundPath)):
-                    boundFile = ReadBindsFromFile(boundPath)
-                else:
-                    continue
-            else:
-                match = [b for b in boundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundPath)]
-                if (len(match) > 0):
-                    boundFile = match[0]
-                elif (os.path.exists(boundPath)):
-                    boundFile = ReadBindsFromFile(boundPath)
-                else:
-                    continue
-            if ( not addBoundFile(boundKey, boundFile)):
-                continue
+        chainFiles = getBoundFiles(path, bind, [], boundFiles)
+        if (len(chainFiles) > 0):
+            result.append(Keychain(key=bind.Key, chord=bind.Chord, boundFiles=chainFiles))
 
-            GetKeyChains(boundFile, boundPath, result, boundFiles)
+    if (len(result) == 0):
+        result = None
+
+    return result
 
 class BindFileCollection():
 
@@ -62,7 +74,7 @@ class BindFileCollection():
         self.File = bindFile
         if ((boundFilesSource != None) and (len(boundFilesSource) == 0)):
             boundFilesSource = None
-        GetKeyChains(self.File, filePath, self.KeyChains, boundFilesSource)
+        self.KeyChains = GetKeyChains(self.File, filePath, boundFilesSource)
 
     def New(self, defaults: bool = False):
             self.FilePath = None
@@ -70,40 +82,26 @@ class BindFileCollection():
 
     def GetBoundFiles(self):
         result = []
-        for keyBind, boundFiles in self.KeyChains.items():
-            for boundFile in boundFiles:
+        if self.KeyChains == None:
+            return result
+        for keyChain in self.KeyChains:
+            if keyChain.BoundFiles == None:
+                continue
+            for boundFile in keyChain.BoundFiles:
                 result.append(boundFile)
-            keyBind = keyBind #makes warnings happy
         return result
 
     def Serialize(self, filePath):
-        self.RepointFilePaths("C:\\keybinds.txt", True)
-        file_dict = {ROOT : self.File.__repr__()}
-        bound_files = []
-        for boundFile in self.GetBoundFiles():
-            bound_file_dict = {}
-            bound_file_dict[PATH] = boundFile.FilePath.replace("C:", ROOT)
-            bound_file_dict[REPR] = boundFile.__repr__()
-            bound_files.append(bound_file_dict)
-        file_dict[BOUND_FILES] = bound_files
+        clone = self.Clone()
+        clone.RepointFilePaths("C:\\keybinds.txt", True)
+        file_dict = clone.GetDictionary()
         with open(filePath, "w+") as json_file:
             json.dump(file_dict, json_file)
-
 
     def Deserialize(self, filePath):
         with open(filePath, "r") as json_file:
             data = json.load(json_file)
-        self.FilePath = "C:\\keybinds.txt"
-        self.File = BindFile(repr=data[ROOT])
-        self.File.FilePath = self.FilePath
-        boundFiles = []
-        for boundFileEntry in data[BOUND_FILES]:
-            boundFile = BindFile(repr=boundFileEntry[REPR])
-            boundFile.FilePath = boundFileEntry[PATH].replace(ROOT, "C:")
-            boundFiles.append(boundFile)
-        self.KeyChains = {}
-        GetKeyChains(self.File, self.FilePath, self.KeyChains, boundFiles)
-
+        self.LoadDictionary(data, serialization = True)
 
     def RepointFilePaths(self, newFilePath: str, overwrite: bool = False):
 
@@ -150,10 +148,73 @@ class BindFileCollection():
             boundFile.WriteBindsToFile()
 
 
-    def __init__(self, filePath: str = ''):
+    def __init__(self, filePath: str = '', bindFile: BindFile = None, keyChains:[Keychain] = None, description = None, repr=''):
 
-        self.FilePath = None
-        self.File = None
-        self.KeyChains = {}
-        if os.path.exists(filePath):
-            self.Load(filePath)
+        if (repr != ''):
+            self.Parse(repr)
+        else:
+            self.FilePath = filePath
+            self.File = bindFile
+            self.KeyChains = None
+            self.Description = description
+
+    def LoadDictionary(self, data, serialization = False):
+        if serialization:
+            self.FilePath = "C:\\keybinds.txt"
+        else:
+            path = data[PATH]
+            if path == NEW_FILE:
+                self.FilePath = None
+            else:
+                self.FilePath = data[PATH]
+        description = data[DESCRIPTION]
+        if (description == NONE):
+            self.Description = None
+        else:
+            self.Description = description
+        self.File = BindFile(repr=data[ROOT])
+        self.File.FilePath = self.FilePath
+        keyChains = data[KEY_CHAINS]
+        if (keyChains == None):
+            self.KeyChains = None
+        else:
+            self.KeyChains = []
+            for entry in keyChains:
+                if serialization:
+                    for boundFile in entry[BOUND_FILES]:
+                        boundFile[PATH] = boundFile[PATH].replace(ROOT, "C:")
+                self.KeyChains.append(Keychain(repr=entry.__repr__()))
+
+    def GetDictionary(self, serialization = False):
+        data = {}
+        if self.FilePath == None:
+            data[PATH] = NEW_FILE
+        else:
+            data[PATH] = self.FilePath
+        if self.Description == None:
+            data[DESCRIPTION] = None
+        else:
+            data[DESCRIPTION] = self.Description
+        data[ROOT] = self.File.__repr__()
+        if self.KeyChains == None:
+            data[KEY_CHAINS] = NONE
+        else:
+            keyChains = []
+            for keyChain in self.KeyChains:
+                chain_dict = keyChain.GetDictionary()
+                if (serialization):
+                    for entry in chain_dict[BOUND_FILES]:
+                        entry[PATH] = entry[PATH].replace("C:", ROOT)
+                keyChains.append(chain_dict)
+            data[KEY_CHAINS] = keyChains
+        return data
+
+    def Parse(self, repr: str):
+        data = ast.literal_eval(repr)
+        self.LoadDictionary(data)
+
+    def __repr__(self)->str:
+        return self.GetDictionary().__repr__()
+
+    def Clone(self):
+        return BindFileCollection(repr=self.__repr__())
