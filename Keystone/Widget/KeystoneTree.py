@@ -8,6 +8,7 @@ from Keystone.Widget.KeystoneFormats import (BACKGROUND, FOREGROUND, FONT_SIZE, 
 FILE_TAG = 'file'
 EDITED_TAG = 'edited'
 CHAIN_TAG = 'chain_header'
+SELECTED_TAG = 'selected'
 
 
 class KeystoneTree(ttk.Treeview):
@@ -37,6 +38,21 @@ class KeystoneTree(ttk.Treeview):
 
         return [child for child in self.GetAllChildren() if tag in self.item(child)["tags"]]
 
+    def selectItem(self, *args):
+
+        #detag deselected
+        selectedTaged = self.GetAllTaggedChildren(SELECTED_TAG)
+        for item in selectedTaged:
+            tags = self.item(item)['tags']
+            tags.remove(SELECTED_TAG)
+            self.item(item, tags=tags)
+
+        #tag selected
+        self.SelectedItem = self.focus()
+        tags = self.item(self.SelectedItem)['tags']
+        tags.append(SELECTED_TAG)
+        self.item(self.SelectedItem, tags=tags)
+
     def fixed_map(self, style, option):
     # Fix for setting text colour for Tkinter 8.6.9
     # From: https://core.tcl.tk/tk/info/509cafafae
@@ -65,9 +81,9 @@ class KeystoneTree(ttk.Treeview):
         self.configure(style='keystone.Treeview')
         editIconPath = GetResourcePath("Resources\\edit.png")
         self.editIcon = tk.PhotoImage(file=editIconPath)
-        self.tag_configure(EDITED_TAG, image=self.editIcon, font=(TEXT_FONT, SMALL_FONT_SIZE, 'bold', 'italic'), background=BACKGROUND, 
-                foreground=FOREGROUND)      
-        self.tag_configure(FILE_TAG, font=(TEXT_FONT, SMALL_FONT_SIZE), background=BACKGROUND, 
-                foreground=FOREGROUND)     
-        self.tag_configure(CHAIN_TAG, font=(TEXT_FONT, SMALL_FONT_SIZE, 'bold'), background=BACKGROUND, 
-                foreground=FOREGROUND)   
+        self.tag_configure(EDITED_TAG, image=self.editIcon, font=(TEXT_FONT, SMALL_FONT_SIZE, 'bold', 'italic'))      
+        self.tag_configure(FILE_TAG, font=(TEXT_FONT, SMALL_FONT_SIZE))     
+        self.tag_configure(CHAIN_TAG, font=(TEXT_FONT, SMALL_FONT_SIZE, 'bold'))   
+        self.tag_configure(SELECTED_TAG, background=FOREGROUND, foreground=BACKGROUND) 
+        self.SelectedItem = None
+        self.bind('<<TreeviewSelect>>', self.selectItem)
