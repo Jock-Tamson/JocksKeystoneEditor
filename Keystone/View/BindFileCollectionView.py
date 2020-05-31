@@ -7,11 +7,12 @@ from Keystone.Model.BindFileCollection import NEW_FILE, BindFileCollection, KEY_
 from Keystone.Model.Keychain import Keychain, BOUND_FILES, NONE, KEY, CHORD, PATH, REPR
 from Keystone.Utility.KeystoneUtils import FormatKeyWithChord, GetDirPathFromRoot, GetFileName
 from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame, KeystoneLabel
-from Keystone.Widget.KeystoneTree import CHAIN_TAG, EDITED_TAG, FILE_TAG, KeystoneTree
+from Keystone.Widget.KeystoneTree import CHAIN_TAG, EDITED_TAG, FILE_TAG, SELECTED_TAG, KeystoneTree
 from Keystone.Model.BindFile import BindFile
 
         
 TAG_SEPERATOR = "::"
+EDITOR = "editor"
 
 class BindFileCollectionView(KeystoneFrame):
 
@@ -24,10 +25,11 @@ class BindFileCollectionView(KeystoneFrame):
             fileName = GetFileName(self.Dictionary[PATH])
             directory = self.Directory
         
-        if (self.Dictionary[EDITED_TAG] >= 0):
-            tags = (FILE_TAG, self.BuildFileTag(-1, -1), EDITED_TAG)
-        else:
-            tags = (FILE_TAG, self.BuildFileTag(-1, -1),)
+        tags = [FILE_TAG, self.BuildFileTag(-1, -1)]
+        if ((self.Dictionary[EDITOR] != None) and (self.Dictionary[EDITOR].Dirty.get())):
+            tags.append(EDITED_TAG)
+        if (self.Dictionary[SELECTED_TAG]):
+            tags.append(SELECTED_TAG)
 
         result.append((0, fileName, tags))
 
@@ -38,14 +40,15 @@ class BindFileCollectionView(KeystoneFrame):
             boundFiles = keyChain[BOUND_FILES]
             if (boundFiles == NONE):
                 continue
-            result.append((1, 'Loaded Files for ' + keyBind, (CHAIN_TAG, keyBind)))
+            result.append((1, 'Loaded Files for ' + keyBind, [CHAIN_TAG, keyBind]))
             for fileIndex, boundFile in enumerate(boundFiles):
                 filePath = os.path.abspath(boundFile[PATH])
                 fileName = GetDirPathFromRoot(directory, filePath)
-                if (boundFile[EDITED_TAG] >= 0):
-                    tags = (FILE_TAG, self.BuildFileTag(chainIndex, fileIndex), EDITED_TAG)
-                else:
-                    tags = (FILE_TAG, self.BuildFileTag(chainIndex, fileIndex), )
+                tags = [FILE_TAG, self.BuildFileTag(chainIndex, fileIndex)]
+                if ((boundFile[EDITOR] != None) and (boundFile[EDITOR].Dirty.get())):
+                    tags.append(EDITED_TAG)
+                if (boundFile[SELECTED_TAG]):
+                    tags.append(SELECTED_TAG)
                 result.append((2, fileName, tags, ))
 
         return result
@@ -60,32 +63,24 @@ class BindFileCollectionView(KeystoneFrame):
         return (int(parts[0]), int(parts[1]))
 
     def SetEdited(self, fileTag, value):
-        chainIndex, fileIndex = self.ParseFileTag(fileTag)
-        if (chainIndex < 0):
-            self.Dictionary[EDITED_TAG] = value
-        else:
-            self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][EDITED_TAG] = value
         item = self.GetItem(fileTag)
-        tags = self.Tree.item(item)['tags']
-        if ((value >= 0) and (tags[-1] != EDITED_TAG)):
-            tags.append(EDITED_TAG)
-        elif ((value == -1) and (tags[-1] == EDITED_TAG)):
-            tags.remove(EDITED_TAG)
-        
-        self.Tree.item(item, tags=tags)
+        if value:
+            self.Tree.AddTag(item, EDITED_TAG)
+        else:
+            self.Tree.RemoveTag(item, EDITED_TAG)
 
-    def GetEditorIndex(self, fileTag):
+    def GetEditor(self, fileTag):
         chainIndex, fileIndex = self.ParseFileTag(fileTag)
         if (chainIndex < 0):
-            return self.Dictionary[EDITED_TAG]
+            return self.Dictionary[EDITOR]
         else:
-            return self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][EDITED_TAG]
+            return self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][EDITOR]
 
-    def GetEditedItem(self, editorIndex):
+    def GetEditedItem(self, editor):
         
         chainIndex = None
         fileIndex = None
-        if self.Dictionary[EDITED_TAG] == editorIndex:
+        if self.Dictionary[EDITOR] == editor:
             chainIndex = -1
             fileIndex = -1
         elif self.Dictionary[KEY_CHAINS] != NONE:
@@ -94,7 +89,7 @@ class BindFileCollectionView(KeystoneFrame):
                 if (boundFiles == NONE):
                     continue
                 for f, boundFile in enumerate(boundFiles):
-                    if (boundFile[EDITED_TAG] == editorIndex):
+                    if (boundFile[EDITOR] == editor):
                         chainIndex = c
                         fileIndex = f
                         break
@@ -103,11 +98,12 @@ class BindFileCollectionView(KeystoneFrame):
         
         if (chainIndex == None):
             return None
+
         return self.GetItem(self.BuildFileTag(chainIndex, fileIndex))
 
 
     def GetItem(self, fileTag):
-        child = [item for item in self.Tree.GetAllTaggedChildren(FILE_TAG) if self.Tree.item(item)['tags'][1] == fileTag]
+        child = [item for item in self.Tree.GetAllTaggedChildren(FILE_TAG) if self.Tree.HasTag(item, fileTag)]
         if (len(child) == 0):
             return None
         else:
@@ -131,15 +127,21 @@ class BindFileCollectionView(KeystoneFrame):
         return BindFile(repr=_repr, filePath = filePath )
 
     def RefreshTree(self):
+        self.Tree.Reset()
         expected = self._buildExpectedTree()
         parent = ['', ]
+        selectedItem = None
         for level, text, tags in expected:
             item = self.Tree.insert(parent[level], 'end', text=text, tags=tags)
+            if SELECTED_TAG in tags:
+                selectedItem = item
             if (len(parent) < (level + 2)):
                 parent.append(item)
             else:
                 parent[level + 1] = item
         self.Tree.OpenCloseAll()
+        if (selectedItem != None):
+            self.Tree.focus(selectedItem)
 
     def Reset(self):
         self.Tree.Reset()
@@ -153,8 +155,9 @@ class BindFileCollectionView(KeystoneFrame):
 
             self.Dictionary = bindFileCollection.GetDictionary()
 
-            #add edited tags to dictionary, index of editor, -1 is none
-            self.Dictionary[EDITED_TAG] = -1
+            #add editor entry to dictiionary
+            self.Dictionary[EDITOR] = None
+            self.Dictionary[SELECTED_TAG] = False
             keyChains = self.Dictionary[KEY_CHAINS]
             if (keyChains != NONE):
                 for keyChain in keyChains:
@@ -162,7 +165,8 @@ class BindFileCollectionView(KeystoneFrame):
                     if (boundFiles == NONE):
                         continue
                     for boundFile in boundFiles:
-                        boundFile[EDITED_TAG] = -1
+                        boundFile[EDITOR] = None
+                        boundFile[SELECTED_TAG] = False
 
             if (bindFileCollection.FilePath == None):
                 self.Directory = NEW_FILE
