@@ -20,23 +20,34 @@ def getBoundFiles(path, bind: Bind, foundFiles, boundFiles):
     for command in bind.GetLoadFileCommands():
         boundPath = command.GetTargetFile()
         if (os.path.realpath (boundPath) == os.path.realpath (path)):
+            #self load
             continue
         if (boundFiles == None):
             if (os.path.exists(boundPath)):
-                boundFile = ReadBindsFromFile(boundPath)
+                action = 'read_from_disk'
             else:
-                continue
+                action = 'create_a_blank'
         else:
             match = [b for b in boundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundPath)]
             if (len(match) > 0):
+                action = 'loaded_match'
                 boundFile = match[0]
             elif (os.path.exists(boundPath)):
-                boundFile = ReadBindsFromFile(boundPath)
+                action = 'read_from_disk'
             else:
-                continue
+                action = 'create_a_blank'
+
+        if (action == 'create a blank'):
+            boundFile = NewBindFile()
+            boundFile.FilePath = boundPath
+        elif (action == 'read_from_disk'):
+            boundFile = ReadBindsFromFile(boundPath)
+
+        #check if already included
         match = [b for b in foundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundFile.FilePath)]
         if (len(match) > 0):
             continue
+        
         foundFiles.append(boundFile.Clone())
         for chainBind in boundFile.GetLoadFileBinds():
                 for foundFile in getBoundFiles(path, chainBind, foundFiles, boundFiles):
