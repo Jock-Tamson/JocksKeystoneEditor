@@ -36,22 +36,42 @@ class KeystoneTree(ttk.Treeview):
 
     def GetAllTaggedChildren(self, tag):
 
-        return [child for child in self.GetAllChildren() if tag in self.item(child)["tags"]]
+        return [child for child in self.GetAllChildren() if self.HasTag(child, tag)]
+
+    def GetTags(self, item):
+        return self.item(item)['tags']
+
+    def SetTags(self, item, tags):
+        self.item(item, tags=tags)
+
+    def HasTag(self, item, tag):
+        return (tag in self.GetTags(item))
+
+    def AddTag(self, item, tag):
+        if (self.HasTag(item, tag)):
+            return
+        tags = self.GetTags(item)
+        tags.append(tag)
+        self.SetTags(item, tags)
+
+    def RemoveTag(self, item, tag):
+        if (not self.HasTag(item, tag)):
+            return
+        tags = self.GetTags(item)
+        tags.remove(tag)
+        self.SetTags(item, tags)
 
     def selectItem(self, *args):
+
+        self.SelectedItem = self.focus()
 
         #detag deselected
         selectedTaged = self.GetAllTaggedChildren(SELECTED_TAG)
         for item in selectedTaged:
-            tags = self.item(item)['tags']
-            tags.remove(SELECTED_TAG)
-            self.item(item, tags=tags)
+            self.RemoveTag(item, SELECTED_TAG)
 
         #tag selected
-        self.SelectedItem = self.focus()
-        tags = self.item(self.SelectedItem)['tags']
-        tags.append(SELECTED_TAG)
-        self.item(self.SelectedItem, tags=tags)
+        self.AddTag(self.SelectedItem, SELECTED_TAG)
 
     def fixed_map(self, style, option):
     # Fix for setting text colour for Tkinter 8.6.9
