@@ -62,12 +62,13 @@ class BindFileCollectionView(KeystoneFrame):
         parts = tag.split(TAG_SEPERATOR)
         return (int(parts[0]), int(parts[1]))
 
-    def SetEdited(self, fileTag, value):
-        item = self.GetItem(fileTag)
+    def SetEdited(self, item, value):
         if value:
             self.Tree.AddTag(item, EDITED_TAG)
         else:
             self.Tree.RemoveTag(item, EDITED_TAG)
+        fileTag = self.Tree.GetTags(item)[1]
+        self.CommitRepr(fileTag)
 
     def GetEditor(self, fileTag):
         chainIndex, fileIndex = self.ParseFileTag(fileTag)
@@ -75,6 +76,13 @@ class BindFileCollectionView(KeystoneFrame):
             return self.Dictionary[EDITOR]
         else:
             return self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][EDITOR]
+
+    def SetEditor(self, fileTag, editor):
+        chainIndex, fileIndex = self.ParseFileTag(fileTag)
+        if (chainIndex < 0):
+            self.Dictionary[EDITOR] = editor
+        else:
+            self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][EDITOR] = editor
 
     def GetEditedItem(self, editor):
         
@@ -109,12 +117,15 @@ class BindFileCollectionView(KeystoneFrame):
         else:
             return child[0]
 
-    def CommitRepr(self, fileTag, repr):
+    def CommitRepr(self, fileTag):
+        editor = self.GetEditor(fileTag)
+        if (editor == None):
+            return
         chainIndex, fileIndex = self.ParseFileTag(fileTag)
         if (chainIndex < 0):
-            self.Dictionary[ROOT] = repr
+            self.Dictionary[ROOT] = editor.Get().__repr__()
         else:
-            self.Dictionary[KEY_CHAINS][chainIndex][fileIndex][REPR] = repr
+            self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][REPR] = editor.Get().__repr__()
 
     def Get(self, fileTag)->BindFile:
         chainIndex, fileIndex = self.ParseFileTag(fileTag)
@@ -141,6 +152,7 @@ class BindFileCollectionView(KeystoneFrame):
                 parent[level + 1] = item
         self.Tree.OpenCloseAll()
         if (selectedItem != None):
+            self.Tree.selection_set(selectedItem)
             self.Tree.focus(selectedItem)
 
     def Reset(self):

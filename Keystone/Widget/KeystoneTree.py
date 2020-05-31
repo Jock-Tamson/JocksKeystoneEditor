@@ -73,6 +73,9 @@ class KeystoneTree(ttk.Treeview):
         #tag selected
         self.AddTag(self.SelectedItem, SELECTED_TAG)
 
+        for callback in self.OnSelect:
+            callback(*args)
+
     def fixed_map(self, style, option):
     # Fix for setting text colour for Tkinter 8.6.9
     # From: https://core.tcl.tk/tk/info/509cafafae
@@ -107,3 +110,4 @@ class KeystoneTree(ttk.Treeview):
         self.tag_configure(SELECTED_TAG, background=FOREGROUND, foreground=BACKGROUND) 
         self.SelectedItem = None
         self.bind('<<TreeviewSelect>>', self.selectItem)
+        self.OnSelect = []
