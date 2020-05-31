@@ -618,7 +618,7 @@ class TestBindFileCollection(unittest.TestCase):
         target.New()
         self.assertEqual(None, target.File.Binds, "Unexpected empty bind length")
         target.New(defaults=True)
-        self.assertEqual(104, len(target.File.Binds), "Unexpected default bind length")
+        self.assertEqual(99, len(target.File.Binds), "Unexpected default bind length")
         self.assertEqual("'", target.File.Binds[0].Key, "Unexpected default key")
         self.assertEqual("quickchat", target.File.Binds[0].Commands[0].Name, "Unexpected default command")
         self.assertEqual("", target.File.Binds[0].Commands[0].Text, "Unexpected default command text")
