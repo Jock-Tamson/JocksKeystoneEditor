@@ -6,7 +6,7 @@ from Keystone.Model.BindFile import GetDefaultBindForKey
 from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.DefaultKeyBindings import DEFAULT_BIND, DEFAULT_COMMAND
 from Keystone.Reference.KeyNames import CHORD_KEYS, KEY_NAMES
-from Keystone.Utility.KeystoneUtils import GetResourcePath
+from Keystone.Utility.KeystoneUtils import FormatKeyWithChord, GetResourcePath
 from Keystone.View.EditSlashCommand import SlashCommandEditor
 from Keystone.Widget.FrameListView import FrameListView
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
@@ -52,8 +52,8 @@ class BindEditor(KeystoneEditFrame):
         self.SetKeyDescription(self.Chord, self.ChordDescription, CHORD_KEYS)
 
     def AssignCommand(self, *args):
-        self.Model.Commands = [SlashCommand(repr=DEFAULT_COMMAND)]
-        self.Load(self.Model)
+        model = Bind(key=self.Key.get(), chord = self.Chord.get(), commands = [SlashCommand(repr=DEFAULT_COMMAND)])
+        self.Load(model)
         self.SetDirty()
 
     def UnassignCommand(self, *args):
@@ -128,23 +128,26 @@ class BindEditor(KeystoneEditFrame):
     def Load(self, bind: Bind):
         self.Loading = True
         try:
-            self.Model = bind
             if (self._lockKey):
                 self.TextEntry.SetText(bind.GetCommands())
             else:
-                self.TextEntry.SetText(bind)
+                self.TextEntry.SetText(bind.__repr__())
             self.SynchTextToUI()
         finally:
             self.Loading=False
         self.SetClean(self)
 
     def SynchTextToUI(self):
+        key = self.Key.get()
+        chord = self.Chord.get()
         text = self.TextEntry.GetText()
         if (self._lockKey):
-            text = "%s %s" % (self.Model.GetKeyWithChord(), text)
+            text = "%s %s" % (FormatKeyWithChord(key, chord), text)
         bind = Bind(repr=text)
-        self.Key.set(bind.Key)
-        self.Chord.set(bind.Chord)
+        if (key != bind.Key):
+            self.Key.set(bind.Key)
+        if (chord != bind.Chord):
+            self.Chord.set(bind.Chord)
         if (bind.Commands != None):        
             self.Commands.Load(SlashCommandEditor, bind.Commands, SlashCommand(repr=DEFAULT_COMMAND))
             self.ShowCommands.set(True)
@@ -174,8 +177,8 @@ class BindEditor(KeystoneEditFrame):
     def Get(self) -> Bind:
         if (self.ShowTextEditor.get()):
             self.SynchTextToUI()
-        self.Model = self.GetBindFromUI()
-        return self.Model
+        model = self.GetBindFromUI()
+        return model
 
 
     def __init__(self, parent, bind: Bind, lockKey = False, dirty = False):
@@ -196,16 +199,13 @@ class BindEditor(KeystoneEditFrame):
         #List of commands view frame
         self.Commands = None
 
-        #Bind data model
-        self.Model = None
-
         #Indicates keys cannot be edited
         self._lockKey = lockKey
 
         #layout grid
-        self.columnconfigure(0, weight=0)
+        self.columnconfigure(0, weight=1, minsize=200)
         self.columnconfigure(1, weight=0)
-        self.columnconfigure(2, weight=1)
+        self.columnconfigure(2, weight=7)
         self.rowconfigure(0, weight=1)
 
         #add controls
@@ -239,12 +239,13 @@ class BindEditor(KeystoneEditFrame):
         self.KeyValue = KeystoneLabel(self.KeyFrame, anchor='nw', textvariable=self.Key, width=5)
         self.KeyBox = KeystoneKeyCombo(self.KeyFrame, textvariable=self.Key, values=" ".join([ c[0] for c in KEY_NAMES]))
         self.Key.trace("w", self.SelectKey)
-        self.Key.trace("w", self.SetDirty)
         
         self.KeyDescription = tk.StringVar()
         keyDescription = KeystoneLabel(self.KeyFrame, anchor="nw", textvariable=self.KeyDescription, wraplength=200)
         keyDescription.grid(row=2, column=0, columnspan=2,  sticky="nsew", padx="3", pady="3")
 
+        self.Key.set(bind.Key)
+        self.Key.trace("w", self.SetDirty)
 
         chordLabel = KeystoneLabel(self.KeyFrame, anchor='nw', text="Chord", width=5)
         chordLabel.grid(row=3, column=0, sticky="nw", padx="3", pady="3")
@@ -252,11 +253,13 @@ class BindEditor(KeystoneEditFrame):
         self.ChordValue = KeystoneLabel(self.KeyFrame, anchor='nw', textvariable=self.Chord, width=5)
         self.ChordBox = KeystoneKeyCombo(self.KeyFrame, textvariable=self.Chord, values=" ".join([ c[0] for c in CHORD_KEYS]))
         self.Chord.trace("w", self.SelectChord)
-        self.Chord.trace("w", self.SetDirty)
         
         self.ChordDescription = tk.StringVar()
         chordDescription = KeystoneLabel(self.KeyFrame, anchor="nw", textvariable=self.ChordDescription, wraplength=200)
         chordDescription.grid(row=4, column=0, columnspan=2, sticky="nsew", padx="3", pady="3")
+      
+        self.Chord.set(bind.Chord)
+        self.Chord.trace("w", self.SetDirty)
 
         self.UnlockKeysButton = KeystoneButton(self, text="Change Assigned Key", command=self.UnlockKeys)
         self.UnlockKeysButton.Color(FOREGROUND, BACKGROUND)
@@ -285,15 +288,19 @@ class EditBindWindow(tk.Toplevel):
 
     def OnOk(self, *args):
         if (self.Editor.Dirty.get()):
-            self.Bind = self.Editor.Get()
-            self.ResultCallback(result = True, bind = self.Bind)
-            self.destroy()
+            try:
+                bind = self.Editor.Get()
+                self.ResultCallback(result = True, bind = bind)
+            finally:
+                self.destroy()
         else:
             self.OnCancel()
 
     def OnCancel(self, *args):
-        self.ResultCallback(result = False, bind = self.Bind)
-        self.destroy()
+        try:
+            self.ResultCallback(result = False, bind = None)
+        finally:
+            self.destroy()
 
 
     def __init__(self, parent, resultCallback, bind: Bind = None, lockKey = False, title = None, dirty = False):
@@ -307,10 +314,6 @@ class EditBindWindow(tk.Toplevel):
             else:
                 title = bind.GetKeyWithChord()
 
-        if (bind == None):
-            bind = Bind(repr=DEFAULT_BIND)
-
-        self.Bind = bind
         self.Title = title
         self.ResultCallback = resultCallback
 
@@ -327,7 +330,11 @@ class EditBindWindow(tk.Toplevel):
         frame.columnconfigure(1, weight=1, minsize='205')
         frame.rowconfigure(0, weight=1)
         frame.rowconfigure(1, weight=0)
-        self.Editor = BindEditor(frame, bind, lockKey = lockKey, dirty = dirty)
+
+        if (bind == None):
+            self.Editor = BindEditor(frame, Bind(repr=DEFAULT_BIND), lockKey = lockKey, dirty = dirty)           
+        else:
+            self.Editor = BindEditor(frame, bind, lockKey = lockKey, dirty = dirty)
         self.Editor.grid(column = 1, row = 0, rowspan=2, sticky='nsew')
         self.Cancel = KeystoneButton(frame, text="OK", command=self.OnOk)
         self.Cancel.configure(text="Cancel",  command=self.OnCancel)
@@ -338,13 +345,3 @@ class EditBindWindow(tk.Toplevel):
         self.OK.grid(column=0, row=0, sticky='nsew')
         frame.grid(column=0, row=0, sticky='nsew')
 
-
-if (__name__ == "__main__"):
-    win = tk.Tk()
-    target = Bind(repr="CONTROL+JOYSTICK2_RIGHT em Does this work?$$+say <color #000000><bgcolor #FFFFFF75><bordercolor #FF0000><scale 1.0><duration 10>Yay!")
-    def callback(result, bind):
-        print(result)
-        print(bind)
-    editor = EditBindWindow(win, callback, target, True)
-
-    tk.mainloop()

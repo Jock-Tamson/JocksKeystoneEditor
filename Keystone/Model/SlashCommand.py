@@ -6,17 +6,17 @@ from Keystone.Utility.KeystoneUtils import (ParseBracketedCodes,
 
 LOAD_FILE_COMMANDS = ("bind_load_file","bind_load_file_silent")
 
+#constant strings
+TOGGLE_STR = "++"
+REPEAT_STR = "+"
+COLOR_STR = "color"
+BACKGROUND_STR = "bgcolor"
+BORDER_STR = "bordercolor"
+SCALE_STR = "scale"
+DURATION_STR = "duration"
+
 #object for a single slash command
 class SlashCommand():
-
-    #constant strings
-    TOGGLE_STR = "++"
-    REPEAT_STR = "+"
-    COLOR_STR = "color"
-    BACKGROUND_STR = "bgcolor"
-    BORDER_STR = "bordercolor"
-    SCALE_STR = "scale"
-    DURATION_STR = "duration"
 
     #parse name and text from a string
     def Parse(self, repr: str):
@@ -26,12 +26,12 @@ class SlashCommand():
         parts = repr.split(separator, 1)
 
         #parse toggle and repeat indicattions
-        if (parts[0].startswith(self.TOGGLE_STR)):
+        if (parts[0].startswith(TOGGLE_STR)):
             self.Toggle = True
-            self.Name = parts[0].replace(self.TOGGLE_STR,"")
-        elif (parts[0].startswith(self.REPEAT_STR)):
+            self.Name = parts[0].replace(TOGGLE_STR,"")
+        elif (parts[0].startswith(REPEAT_STR)):
             self.Repeat = True
-            self.Name = parts[0].replace(self.REPEAT_STR,"")
+            self.Name = parts[0].replace(REPEAT_STR,"")
         else:
             self.Name = parts[0]
 
@@ -42,15 +42,15 @@ class SlashCommand():
             parts[1] = parts[1].replace("&lt;", "<")
             self.Text = parts[1].split(">")[-1]
             #parse formatting
-            self.TextColor = ParseBracketedCodes(parts[1], self.COLOR_STR)
-            self.TextBackgroundColor = ParseBracketedCodes(parts[1], self.BACKGROUND_STR)
+            self.TextColor = ParseBracketedCodes(parts[1], COLOR_STR)
+            self.TextBackgroundColor = ParseBracketedCodes(parts[1], BACKGROUND_STR)
             if (self.TextBackgroundColor.startswith("#") and (len(self.TextBackgroundColor) > len("#FFFFFF"))):
                 #Transparency code present
                 self.TextBackgroundTransparency = self.TextBackgroundColor[-2:]
                 self.TextBackgroundColor = self.TextBackgroundColor[0:-2]
-            self.TextBorderColor = ParseBracketedCodes(parts[1], self.BORDER_STR)
-            self.TextScale = ParseBracketedCodes(parts[1], self.SCALE_STR)
-            self.TextDuration = ParseBracketedCodes(parts[1], self.DURATION_STR)
+            self.TextBorderColor = ParseBracketedCodes(parts[1], BORDER_STR)
+            self.TextScale = ParseBracketedCodes(parts[1], SCALE_STR)
+            self.TextDuration = ParseBracketedCodes(parts[1], DURATION_STR)
 
     def GetTargetFile(self):
         if (self.IsLoadFileCommand()):
@@ -125,11 +125,11 @@ class SlashCommand():
         #add formatting
         formatFormat = "<%s %s>"
         if (self.TextDuration != ""):
-            text = formatFormat % (self.DURATION_STR, self.TextDuration) + text
+            text = formatFormat % (DURATION_STR, self.TextDuration) + text
         if (self.TextScale != ""):
-            text = formatFormat % (self.SCALE_STR, self.TextScale) + text
+            text = formatFormat % (SCALE_STR, self.TextScale) + text
         if (self.TextBorderColor != ""):
-            text = formatFormat % (self.BORDER_STR, self.TextBorderColor) + text
+            text = formatFormat % (BORDER_STR, self.TextBorderColor) + text
         if (self.TextBackgroundColor != ""):
             color = self.TextBackgroundColor
             transparency = self.TextBackgroundTransparency 
@@ -141,10 +141,10 @@ class SlashCommand():
                 except KeyError:
                     transparency = ""
             
-            text = formatFormat % (self.BACKGROUND_STR, color + transparency) + text
+            text = formatFormat % (BACKGROUND_STR, color + transparency) + text
 
         if (self.TextColor != ""):
-            text = formatFormat % (self.COLOR_STR, self.TextColor) + text
+            text = formatFormat % (COLOR_STR, self.TextColor) + text
 
         return text
 
@@ -153,9 +153,9 @@ class SlashCommand():
         result = self.Name
         #add toggle and repeat indicated before name
         if (self.Repeat):
-            result = self.REPEAT_STR + result
+            result = REPEAT_STR + result
         elif(self.Toggle):
-            result = self.TOGGLE_STR + result
+            result = TOGGLE_STR + result
         return result      
 
     def __repr__(self):

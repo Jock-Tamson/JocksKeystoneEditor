@@ -1,6 +1,6 @@
 from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.KeyNames import CHORD_KEYS, KEY_NAMES
-from Keystone.Utility.KeystoneUtils import MatchKeyName, RemoveOuterQuotes
+from Keystone.Utility.KeystoneUtils import FormatKeyWithChord, MatchKeyName, RemoveOuterQuotes
 
 #object for a keybind of 1 or more commands
 class Bind():
@@ -97,12 +97,8 @@ class Bind():
         else:
             key = self.Key
             chord = self.Chord
-        if (chord == ""):
-            result = key
-        else:
-            result = "%s+%s" % (chord, key)
-        return result
-
+        return FormatKeyWithChord(key, chord)
+        
     def GetCommands(self):
         if (self.Commands == None):
             return self.UNBOUND

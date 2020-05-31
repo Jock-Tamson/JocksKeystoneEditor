@@ -40,6 +40,13 @@ class Keychain():
     def GetKeyWithChord(self):
         return self.parserBind.GetKeyWithChord(defaultNames=True)
 
+    #Dictionary structure
+    #KEY - Key for bind in root file
+    #CHORD - Chord for bind in root file
+    #BOUND_FILES- Array of dictionaries for bound files
+        #PATH - Path from load command
+        #REPR - repr string of loaded bind file
+
     def GetDictionary(self):
         keychainDict = {}
         keychainDict[KEY] = self.Key

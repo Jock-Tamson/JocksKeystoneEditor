@@ -2,9 +2,9 @@ import os as os
 import tkinter as tk
 from tkinter import filedialog, ttk
 
-from Keystone.Model.BindFile import ReadBindsFromFile
-from Keystone.Model.BindFileCollection import NEW_FILE, BindFileCollection
-from Keystone.Model.Keychain import Keychain
+from Keystone.Model.BindFile import BindFile, NewBindFile, ReadBindsFromFile
+from Keystone.Model.BindFileCollection import NEW_FILE, KEY_CHAINS, ROOT, BindFileCollection
+from Keystone.Model.Keychain import BOUND_FILES, Keychain, NONE, KEY, CHORD, PATH, REPR
 from Keystone.View.BindFileCollectionView import BindFileCollectionView
 from Keystone.View.EditBindFile import EditBindFile
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
@@ -18,30 +18,38 @@ class EditBindFileCollection(KeystoneEditFrame):
 
     def SetEditedItem(self, *args):
         tags = self.selectedItem['tags']
-        selectedFilePath = tags[1]
+        if (tags[0] != FILE_TAG):
+            return
+        fileTag = tags[1]
         if (self.EditedItems == None):
-            self.EditedItems = {selectedFilePath : self.editor}
+            self.EditedItems = [self.editor]
         else:
-            self.EditedItems[selectedFilePath] = self.editor
-        if (not (EDITED_TAG in tags)):
-            tags.append(EDITED_TAG)
-        self.viewFrame.Tree.item(self.viewFrame.Tree.focus(), tags=tags)
+            self.EditedItems.append(self.editor)
+        self.viewFrame.SetEdited(fileTag, len(self.EditedItems) - 1)
         self.SetDirty()
 
     def ClearEditedItem(self, *args):
         editor = args[0]
-        filePath = editor.Model.FilePath
-        items = self.viewFrame.Tree.GetAllTaggedChildren(filePath)
-        for item in items:
-            tags = self.viewFrame.Tree.item(item)['tags']
-            if (EDITED_TAG in tags):
-                tags.remove(EDITED_TAG)
-            if ((self.EditedItems != None) and (filePath in self.EditedItems)):
-                del self.EditedItems[filePath] 
-                if (len(self.EditedItems) == 0):
-                    self.EditedItems = None
-                    self.SetClean()
-            self.viewFrame.Tree.item(item, tags=tags)
+        index = [idx for idx, e in enumerate(self.EditedItems) if e == editor][0]
+        chainIndex = None
+        fileIndex = None
+        if self.viewFrame.Dictionary[EDITED_TAG] == index:
+            chainIndex = -1
+            fileIndex = -1
+        elif self.viewFrame.Dictionary[KEY_CHAINS] != NONE:
+            for c, keyChain in enumerate(self.viewFrame.Dictionary[KEY_CHAINS]):
+                boundFiles = keyChain[BOUND_FILES]
+                if (boundFiles == NONE):
+                    continue
+                for f, boundFile in enumerate(boundFiles):
+                    if (boundFile[EDITED_TAG] == index):
+                        chainIndex = c
+                        fileIndex = f
+                        break
+                if (chainIndex != None):
+                    break
+        fileTag = self.viewFrame.BuildFileTag(chainIndex, fileIndex)
+        self.viewFrame.SetEdited(fileTag, -1)
 
     def selectItem(self, *args):
         self.selectedItem = self.viewFrame.Tree.item(self.viewFrame.Tree.focus())
@@ -56,16 +64,14 @@ class EditBindFileCollection(KeystoneEditFrame):
             return
         self.lastItem = tags
         if (tags[0] == FILE_TAG):
-            selectedFilePath = tags[1]
+            fileTag = tags[1]
+            editorIndex = self.viewFrame.GetEditorIndex(fileTag)
             if (self.editor != None):
                 self.editor.grid_forget()
-            if (self.EditedItems != None) and (selectedFilePath in self.EditedItems):
-                self.editor = self.EditedItems[selectedFilePath]
+            if (editorIndex >= 0):
+                self.editor = self.EditedItems[editorIndex]
             else:
-                if (selectedFilePath == self.viewFrame.Collection.FilePath):
-                    bindFile = self.viewFrame.Collection.File
-                else:
-                    bindFile = [b for b in self.viewFrame.Collection.GetBoundFiles() if b.FilePath == selectedFilePath][0]
+                bindFile = self.viewFrame.Get(fileTag)
                 self.editor = EditBindFile(self.editFrame, bindFile)
                 self.editor.OnSetDirty.append(self.SetEditedItem)
                 self.editor.OnSetClean.append(self.ClearEditedItem)
@@ -75,27 +81,19 @@ class EditBindFileCollection(KeystoneEditFrame):
                 self.editor.grid_forget()
                 self.editor = None
             return
-            #key = tags[1]
-            #keyChain = Keychain(self.viewFrame.Collection, key)
-            #self.editor = EditKeychain(self.editFrame, keyChain)
         self.editor.grid(row=0, column=0, sticky='nsew')
 
     def Reset(self):
         if (self.editor != None):
             self.editor.grid_forget()
         self.EditedItems = None
-        self.Model = None
+        self.FilePath = None
         self.viewFrame.Reset()
 
-    def Load(self, path = None, defaults: bool = False):
+    def Load(self, bindFileCollection):
         self.Reset()
-
-        if (path == None):
-            self.viewFrame.New(defaults)
-        else:
-            self.viewFrame.Load(path)
-
-        self.Model = self.viewFrame.Collection
+        self.FilePath = bindFileCollection.FilePath
+        self.viewFrame.Load(bindFileCollection)
 
         children = self.viewFrame.Tree.GetAllChildren() 
         if (len(children) > 1):
@@ -106,18 +104,29 @@ class EditBindFileCollection(KeystoneEditFrame):
         self.viewFrame.Tree.selection_set(children[0])
         self.viewFrame.Tree.focus(children[0])
 
+    def Get(self):
+        if (self.viewFrame.Dictionary == None):
+            return None
+        keyChains = []
+        if (self.viewFrame.Dictionary[KEY_CHAINS] != NONE):
+            for keyChain in self.viewFrame.Dictionary[KEY_CHAINS]:
+                keyChains.append(Keychain(repr=keyChain.__repr__()))
+        root = BindFile(filePath=self.viewFrame.Dictionary[PATH], repr=self.viewFrame.Dictionary[ROOT])
+        collection = BindFileCollection(filePath = self.FilePath, bindFile=root, keyChains = keyChains)
+        return collection
+
     def New(self, defaults: bool = False):
-        self.Load(defaults = defaults)
-        self.EditedItems = {NEW_FILE : EditBindFile(self.editFrame, self.viewFrame.Collection.File)}
+        bindFile = NewBindFile(defaults)
+        collection = BindFileCollection(None, bindFile)
+        self.Load(collection)
+        self.EditedItems = [EditBindFile(self.editFrame, bindFile = bindFile)]
+        self.viewFrame.SetEdited(self.viewFrame.BuildFileTag(-1, -1), 0)
         self.SetDirty()
 
     def Open(self, fileName = None):
         if (fileName == None):
             options = {}
-            if (self.Model != None):
-                filePath = self.Model.FilePath
-            else:
-                filePath = None
+            filePath = self.FilePath
             if (filePath != None):
                 options['initialfile'] = filePath
                 options['initialdir'] = os.path.dirname(filePath)
@@ -128,13 +137,17 @@ class EditBindFileCollection(KeystoneEditFrame):
             fileName = filedialog.askopenfilename(**options)
 
         if (fileName != ''):
-            self.Load(path=fileName)
+            collection = BindFileCollection()
+            collection.Load(fileName)
+            self.Load(collection)
 
     def Save(self, promptForPath: bool = False):
-        if (self.viewFrame.Collection == None):
+
+        if (self.viewFrame.Dictionary == None):
             return
-        currentFilePath = self.viewFrame.Collection.File.FilePath
-        if ( promptForPath or (currentFilePath == None)):        
+
+        currentFilePath = self.FilePath
+        if ( promptForPath or (currentFilePath== None)):        
             options = {}
             options['initialfile'] = "keybinds.txt"
             options['title'] = "Save Keybind File As"
@@ -145,61 +158,24 @@ class EditBindFileCollection(KeystoneEditFrame):
                 return
         else:
             filePath = currentFilePath
-        
-        filePath = os.path.abspath(filePath)
-        if (filePath == currentFilePath):
-            if ((self.EditedItems != None) and (len(self.EditedItems) > 0)):
-                openEditors = [editor for path, editor in self.EditedItems.items()]
-                for editor in openEditors:
-                    editor.OnSave()
-        else:
-            if ((self.EditedItems != None) and (len(self.EditedItems) > 0)):
-                openEditors = [editor for path, editor in self.EditedItems.items()]
-                for editor in openEditors:
-                    editor.Get()
-            self.viewFrame.Collection.Save(filePath)
-            self.Load(filePath)
+
+        self.FilePath = os.path.abspath(filePath)
+
+        for idx, editor in enumerate(self.EditedItems):
+            item = self.viewFrame.Tree.item(self.viewFrame.GetEditedItem(idx))
+            fileTag = item['tags'][1]
+            self.viewFrame.CommitRepr(fileTag, editor.Get().__repr__())
+
+        collection = self.Get()
+            
+        collection.Save(filePath)
+        self.Load(collection)
 
         if (self.SaveCallback != None):
             self.SaveCallback(self)
 
-    def _openLinkedFileCallback(self, path, bind, sourceFile):
-        match = [(idx, item[0], item[1], item[2]) for idx, item in enumerate(self.viewFrame._tree) if (item[2][0] == FILE_TAG) and os.path.realpath(item[2][1]) == os.path.realpath(path)]
-        sourcePath = sourceFile.FilePath
-        sourceMatch = [(idx, item[0], item[1], item[2]) for idx, item in enumerate(self.viewFrame._tree) if (item[2][0] == FILE_TAG) and os.path.realpath(item[2][1]) == os.path.realpath(sourcePath)]
-        if (len(match) > 0):
-            matchLevel = match[0][1]
-            if (matchLevel == 0):
-                print("self load")
-            else:
-                headerIndex = match[0][0] - 1
-                headerLevel = 2
-                while (headerLevel != 1):
-                    chainHeader = self.viewFrame._tree[headerIndex]
-                    headerLevel = chainHeader[0]
-                    headerIndex = headerIndex - 1
-                headerKey = chainHeader[1].split(" ")[-1]
-                bindKey = bind.GetKeyWithChord(defaultNames=True)
-                if (bindKey == headerKey):
-                    print("No change")
-                else:
-                    sourceLevel = sourceMatch[0][1]
-                    if (sourceLevel == 0):
-                        print("remapped chain")
-                    else:
-                        print("Redirect in chain")
-        else:
-            #new file
-            if (len(sourceMatch) > 0):
-                sourceLevel = sourceMatch[0][1]
-                if (sourceLevel == 0):
-                    print("new chain")
-                else:
-                    print("extended chain")
-            else:
-                print("#new orphan")
-
-
+    def _openLinkedFileCallback(self, path, bind, source):
+        pass
 
     def __init__(self, parent, saveCallback = None):
 
@@ -209,7 +185,6 @@ class EditBindFileCollection(KeystoneEditFrame):
         self.editor = None
         self.selectedItem = None
         self.EditedItems = None
-        self.Model = None
         self.SaveCallback = saveCallback
 
         self.Pane = KeystonePanedWindow(self, orient=tk.HORIZONTAL)
@@ -225,12 +200,5 @@ class EditBindFileCollection(KeystoneEditFrame):
         self.Pane.add(self.editFrame)
         
         SetOpenLinkedFileCallback(self._openLinkedFileCallback)
-    
-if (__name__ == "__main__"):
-    win = tk.Tk()
-    editor = EditBindFileCollection(win)
-    #editor.Load('.\\TestReferences\\Jock Tamson\\keybinds.txt')
-    editor.New(defaults=True)
-    editor.pack(fill=tk.BOTH, expand=1)
 
-    tk.mainloop()
+        self.Reset()

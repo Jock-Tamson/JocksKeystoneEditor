@@ -104,18 +104,24 @@ def SetOpenLinkedFileCallback(callback):
     global OpenLinkedFileCallback
     OpenLinkedFileCallback = callback
 
-def TriggerOpenLinkedFileCallback(path, bind, sourceFile):
+def TriggerOpenLinkedFileCallback(path, bind, source):
     global OpenLinkedFileCallback
     if (OpenLinkedFileCallback != None):
-        t =  threading.Thread(name='openlinkedfilecallback_'+ path, target=OpenLinkedFileCallback, args=(path, bind, sourceFile)) 
+        t =  threading.Thread(name='openlinkedfilecallback_'+ path, target=OpenLinkedFileCallback, args=(path, bind, source)) 
         t.start()
 
+global NO_MEIPASS
+NO_MEIPASS = True
 #https://shanetully.com/2013/08/cross-platform-deployment-of-python-applications-with-pyinstaller/
 def GetResourcePath(relativePath)->str:
-    try:
-        basePath = sys._MEIPASS
-    except Exception:
-        basePath = ''
+    basePath = ''
+    global NO_MEIPASS
+    if not NO_MEIPASS:
+        try:
+            basePath = sys._MEIPASS
+        except Exception:
+            basePath = ''
+            NO_MEIPASS = True
 
     path = os.path.join(basePath, relativePath)
 
@@ -154,3 +160,10 @@ def MatchKeyName(compName, nameList)->[str, str, str]:
         return matches[0]
     else:
         return None
+
+def FormatKeyWithChord(key, chord): 
+    if (chord == ""):
+        result = key
+    else:
+        result = "%s+%s" % (chord, key)
+    return result

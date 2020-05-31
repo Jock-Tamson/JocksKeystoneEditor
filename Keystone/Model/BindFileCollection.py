@@ -158,6 +158,17 @@ class BindFileCollection():
             self.KeyChains = None
             self.Description = description
 
+    #Dictionary structure
+    #PATH - File Path
+    #DESCRIPTION - Description for import and export files
+    #ROOT - repr string of root bind file
+    #KEY_CHAINS - array bound file chain dictionaries, NONE is empty    
+        #KEY - Key for bind in root file
+        #CHORD - Chord for bind in root file
+        #BOUND_FILES- Array of dictionaries for bound files
+            #PATH - Path from load command
+            #REPR - repr string of loaded bind file
+
     def LoadDictionary(self, data, serialization = False):
         if serialization:
             self.FilePath = "C:\\keybinds.txt"
@@ -175,7 +186,7 @@ class BindFileCollection():
         self.File = BindFile(repr=data[ROOT])
         self.File.FilePath = self.FilePath
         keyChains = data[KEY_CHAINS]
-        if (keyChains == None):
+        if (keyChains == NONE):
             self.KeyChains = None
         else:
             self.KeyChains = []

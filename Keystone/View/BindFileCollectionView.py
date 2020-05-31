@@ -3,44 +3,135 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, ttk
 
-from Keystone.Model.BindFileCollection import NEW_FILE, BindFileCollection
-from Keystone.Utility.KeystoneUtils import GetDirPathFromRoot, GetFileName
+from Keystone.Model.BindFileCollection import NEW_FILE, BindFileCollection, KEY_CHAINS, ROOT
+from Keystone.Model.Keychain import Keychain, BOUND_FILES, NONE, KEY, CHORD, PATH, REPR
+from Keystone.Utility.KeystoneUtils import FormatKeyWithChord, GetDirPathFromRoot, GetFileName
 from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame, KeystoneLabel
 from Keystone.Widget.KeystoneTree import CHAIN_TAG, EDITED_TAG, FILE_TAG, KeystoneTree
 from Keystone.Model.BindFile import BindFile
 
+        
+TAG_SEPERATOR = "::"
 
 class BindFileCollectionView(KeystoneFrame):
 
-    def _buildExpectedTree(self, path, collection):
+    def _buildExpectedTree(self):
         result = []
-        if (path == NEW_FILE):
+        if (self.Directory == NEW_FILE):
             fileName = NEW_FILE
             directory = ""
-            tags = (FILE_TAG, fileName, EDITED_TAG,)
         else:
-            fileName = GetFileName(path)
-            directory = os.path.dirname(path)
-            tags = (FILE_TAG, path, )
+            fileName = GetFileName(self.Dictionary[PATH])
+            directory = self.Directory
+        
+        if (self.Dictionary[EDITED_TAG] >= 0):
+            tags = (FILE_TAG, self.BuildFileTag(-1, -1), EDITED_TAG)
+        else:
+            tags = (FILE_TAG, self.BuildFileTag(-1, -1),)
+
         result.append((0, fileName, tags))
 
-        if (collection.KeyChains == None):
+        if (self.Dictionary[KEY_CHAINS] == NONE):
             return result
-        for keyChain in collection.KeyChains:
-            keyBind = keyChain.GetKeyWithChord()
-            boundFiles = keyChain.BoundFiles
+        for chainIndex, keyChain in enumerate(self.Dictionary[KEY_CHAINS]):
+            keyBind = FormatKeyWithChord(keyChain[KEY], keyChain[CHORD])
+            boundFiles = keyChain[BOUND_FILES]
+            if (boundFiles == NONE):
+                continue
             result.append((1, 'Loaded Files for ' + keyBind, (CHAIN_TAG, keyBind)))
-            for boundFile in boundFiles:
-                filePath = os.path.abspath(boundFile.FilePath)
+            for fileIndex, boundFile in enumerate(boundFiles):
+                filePath = os.path.abspath(boundFile[PATH])
                 fileName = GetDirPathFromRoot(directory, filePath)
-                result.append((2, fileName, (FILE_TAG, filePath, )))
+                if (boundFile[EDITED_TAG] >= 0):
+                    tags = (FILE_TAG, self.BuildFileTag(chainIndex, fileIndex), EDITED_TAG)
+                else:
+                    tags = (FILE_TAG, self.BuildFileTag(chainIndex, fileIndex), )
+                result.append((2, fileName, tags, ))
 
         return result
 
 
-    def _fillTree(self, path, collection):
-        self.File.set(path)
-        expected = self._buildExpectedTree(path, collection)
+    def BuildFileTag(self, chainIndex, fileIndex):
+        tag = "%d%s%d" % (chainIndex, TAG_SEPERATOR, fileIndex)
+        return tag
+
+    def ParseFileTag(self, tag)->(int,int):
+        parts = tag.split(TAG_SEPERATOR)
+        return (int(parts[0]), int(parts[1]))
+
+    def SetEdited(self, fileTag, value):
+        chainIndex, fileIndex = self.ParseFileTag(fileTag)
+        if (chainIndex < 0):
+            self.Dictionary[EDITED_TAG] = value
+        else:
+            self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][EDITED_TAG] = value
+        item = self.GetItem(fileTag)
+        tags = self.Tree.item(item)['tags']
+        if ((value >= 0) and (tags[-1] != EDITED_TAG)):
+            tags.append(EDITED_TAG)
+        elif ((value == -1) and (tags[-1] == EDITED_TAG)):
+            tags.remove(EDITED_TAG)
+        
+        self.Tree.item(item, tags=tags)
+
+    def GetEditorIndex(self, fileTag):
+        chainIndex, fileIndex = self.ParseFileTag(fileTag)
+        if (chainIndex < 0):
+            return self.Dictionary[EDITED_TAG]
+        else:
+            return self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][EDITED_TAG]
+
+    def GetEditedItem(self, editorIndex):
+        
+        chainIndex = None
+        fileIndex = None
+        if self.Dictionary[EDITED_TAG] == editorIndex:
+            chainIndex = -1
+            fileIndex = -1
+        elif self.Dictionary[KEY_CHAINS] != NONE:
+            for c, keyChain in enumerate(self.Dictionary[KEY_CHAINS]):
+                boundFiles = keyChain[BOUND_FILES]
+                if (boundFiles == NONE):
+                    continue
+                for f, boundFile in enumerate(boundFiles):
+                    if (boundFile[EDITED_TAG] == editorIndex):
+                        chainIndex = c
+                        fileIndex = f
+                        break
+                if (chainIndex != None):
+                    break
+        
+        if (chainIndex == None):
+            return None
+        return self.GetItem(self.BuildFileTag(chainIndex, fileIndex))
+
+
+    def GetItem(self, fileTag):
+        child = [item for item in self.Tree.GetAllTaggedChildren(FILE_TAG) if self.Tree.item(item)['tags'][1] == fileTag]
+        if (len(child) == 0):
+            return None
+        else:
+            return child[0]
+
+    def CommitRepr(self, fileTag, repr):
+        chainIndex, fileIndex = self.ParseFileTag(fileTag)
+        if (chainIndex < 0):
+            self.Dictionary[ROOT] = repr
+        else:
+            self.Dictionary[KEY_CHAINS][chainIndex][fileIndex][REPR] = repr
+
+    def Get(self, fileTag)->BindFile:
+        chainIndex, fileIndex = self.ParseFileTag(fileTag)
+        if (chainIndex < 0):
+            filePath = self.Dictionary[PATH]
+            _repr = self.Dictionary[ROOT]
+        else:
+            filePath = self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][PATH]
+            _repr = self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][REPR]
+        return BindFile(repr=_repr, filePath = filePath )
+
+    def RefreshTree(self):
+        expected = self._buildExpectedTree()
         parent = ['', ]
         for level, text, tags in expected:
             item = self.Tree.insert(parent[level], 'end', text=text, tags=tags)
@@ -48,44 +139,41 @@ class BindFileCollectionView(KeystoneFrame):
                 parent.append(item)
             else:
                 parent[level + 1] = item
-        self._tree = expected
         self.Tree.OpenCloseAll()
 
     def Reset(self):
         self.Tree.Reset()
-        self.Model = None
-        self.Collection = None
+        self.Dictionary = None
+        self.Directory = ""
+        self.Tree.heading("#0", text="Keybind Collection", anchor='w')
 
-    def _doLoad(self, model):
-        if (model != None):
-            bindFile = BindFile(repr=self.Model.File.__repr__(), filePath=self.Model.File.FilePath)
-            boundFilesSource = [BindFile(repr = b.__repr__(), filePath = b.FilePath) for b in self.Model.GetBoundFiles()]
-            self.Collection = BindFileCollection()
-            self.Collection.Load(self.Model.FilePath, bindFile = bindFile, boundFilesSource = boundFilesSource)
-            path = self.Model.FilePath
-            if (path == None):
-                path = NEW_FILE
-            self._fillTree(path, self.Collection)
-        else:
-            self.Collection = None
-
-    def Load(self, path: str, ):
+    def Load(self, bindFileCollection):
         self.Reset()
-        path = os.path.abspath(path)
-        if (os.path.exists(path)):
-            self.Model = BindFileCollection()
-            self.Model.Load(path)
-        else:
-            self.Model = None
-        self._doLoad(self.Model)
+        if (bindFileCollection != None):
 
-    def New(self, defaults:bool = False):
-        self.Reset()
-        self.Model = BindFileCollection()
-        self.Model.New(defaults)
-        self._doLoad(self.Model)
+            self.Dictionary = bindFileCollection.GetDictionary()
 
-    def __init__(self, parent, showScroll = False, showBrowse = False):
+            #add edited tags to dictionary, index of editor, -1 is none
+            self.Dictionary[EDITED_TAG] = -1
+            keyChains = self.Dictionary[KEY_CHAINS]
+            if (keyChains != NONE):
+                for keyChain in keyChains:
+                    boundFiles = keyChain[BOUND_FILES]
+                    if (boundFiles == NONE):
+                        continue
+                    for boundFile in boundFiles:
+                        boundFile[EDITED_TAG] = -1
+
+            if (bindFileCollection.FilePath == None):
+                self.Directory = NEW_FILE
+            else:
+                self.Directory = os.path.dirname(bindFileCollection.FilePath)
+            
+            self.Tree.heading("#0", text=self.Directory, anchor='w')
+
+            self.RefreshTree()
+
+    def __init__(self, parent, showScroll = False):
 
         KeystoneFrame.__init__(self, parent)
         self.columnconfigure(0, weight=1)
@@ -117,19 +205,4 @@ class BindFileCollectionView(KeystoneFrame):
         browseFrame.grid(row=0, column=0, columnspan=2, sticky='nsew')
         browseFrame.columnconfigure(0, weight=1)
         browseFrame.columnconfigure(1, weight=0)
-        self.File = tk.StringVar()
-        directoryEdit = KeystoneLabel(browseFrame, textvariable=self.File)
-        if showBrowse:
-            directoryEdit.grid(column=0, row=0, sticky='nsew')
-
-        self.Collection = None
-        self._tree = [(None,None,None)]
-    
-if (__name__ == "__main__"):
-    win = tk.Tk()
-    viewFrame = BindFileCollectionView(win)
-    viewFrame.pack(fill=tk.BOTH, expand=True)
-    #viewFrame.New()
-    viewFrame.Load('.\\TestReferences\\Jock Tamson\\keybinds.txt')
-
-    tk.mainloop()
+        self.Directory = ""
