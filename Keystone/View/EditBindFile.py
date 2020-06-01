@@ -28,10 +28,10 @@ class BindListItem(KeystoneEditFrame):
             if (bind.GetKeyWithChord(defaultNames=True) != self.Get().GetKeyWithChord(defaultNames=True)):
                 self.BindFileEditor.NewBindCallback(True, bind, moving = self.master)
             else:
-                self.SetDirty()
                 self.Repr.set(bind.__repr__())
                 if bind.IsLoadFileBind():
                     self.BindFileEditor.OnLinkedFilesFound(binds=[bind])
+                self.SetDirty()
         
     def SetEdited(self, *args):
         dirty = self.Dirty.get()

@@ -37,7 +37,7 @@ def getBoundFiles(path, bind: Bind, foundFiles, boundFiles):
             else:
                 action = 'create_a_blank'
 
-        if (action == 'create a blank'):
+        if (action == 'create_a_blank'):
             boundFile = NewBindFile()
             boundFile.FilePath = boundPath
         elif (action == 'read_from_disk'):
@@ -47,7 +47,7 @@ def getBoundFiles(path, bind: Bind, foundFiles, boundFiles):
         match = [b for b in foundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundFile.FilePath)]
         if (len(match) > 0):
             continue
-        
+
         foundFiles.append(boundFile.Clone())
         for chainBind in boundFile.GetLoadFileBinds():
                 for foundFile in getBoundFiles(path, chainBind, foundFiles, boundFiles):
@@ -166,7 +166,7 @@ class BindFileCollection():
         else:
             self.FilePath = filePath
             self.File = bindFile
-            self.KeyChains = None
+            self.KeyChains = keyChains
             self.Description = description
 
     #Dictionary structure

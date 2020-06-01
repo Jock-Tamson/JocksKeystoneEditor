@@ -69,6 +69,9 @@ class Bind():
         else:
             return [p for p in self.Commands if p.IsLoadFileCommand() ]
 
+    def GetLoadedFilePaths(self):
+        return [command.GetTargetFile() for command in self.GetLoadFileCommands()]
+
     def GetDefaultedKeyName(self)->str:
         if (self._lastKey != self.Key):
             self._lastKey = self.Key

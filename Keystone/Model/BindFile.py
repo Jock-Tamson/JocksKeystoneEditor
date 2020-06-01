@@ -62,6 +62,13 @@ class BindFile():
             return []
         return [b for b in self.Binds if b.IsLoadFileBind()]
 
+    def GetLoadedFilePaths(self):
+        result = []
+        for bind in self.GetLoadFileBinds():
+            for path in bind.GetLoadedFilePaths():
+                result.append(path)
+        return result
+
     def RepointFilePaths(self, newFilePath: str, overwrite: bool = False):
         currentFilePath = os.path.abspath(self.FilePath)
         newFilePath = os.path.abspath(newFilePath)

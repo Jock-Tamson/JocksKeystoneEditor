@@ -189,12 +189,12 @@ class SlashCommandEditor(KeystoneEditFrame):
         filePath = filedialog.asksaveasfilename(**options)
         if (filePath != ''):
             self.TextEntry.SetText("\"%s\"" % (filePath))  
-            self.SetDirty()      
             file = open(filePath, "w+")
             try:
                 file.write("")
             finally:
                 file.close()
+            self.SetDirty()      
 
     def __init__(self, parent, command: SlashCommand):
         KeystoneEditFrame.__init__(self, parent)

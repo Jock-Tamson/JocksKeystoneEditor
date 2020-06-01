@@ -22,7 +22,7 @@ class EditBindFileCollection(KeystoneEditFrame):
         self.viewFrame.SetEdited(item, True)
         if (self.EditedItems == None):
             self.EditedItems = [editor]
-        else:
+        elif (not (editor in self.EditedItems)):
             self.EditedItems.append(editor)
         self.SetDirty()
 
@@ -31,10 +31,11 @@ class EditBindFileCollection(KeystoneEditFrame):
         item = self.viewFrame.GetEditedItem(editor)
         self.viewFrame.SetEdited(item, False)
         if (self.EditedItems != None):
-            self.EditedItems.remove(editor)
-        if (len(self.EditedItems) == 0):
-            self.EditedItems = None
-            self.SetClean()
+            if (editor in self.EditedItems):
+                self.EditedItems.remove(editor)
+                if (len(self.EditedItems) == 0):
+                    self.EditedItems = None
+                    self.SetClean()
 
     def selectItem(self, *args):
         self.selectedItem = self.viewFrame.Tree.focus()
@@ -85,15 +86,7 @@ class EditBindFileCollection(KeystoneEditFrame):
         self.viewFrame.Tree.focus(children[0])
 
     def Get(self):
-        if (self.viewFrame.Dictionary == None):
-            return None
-        keyChains = []
-        if (self.viewFrame.Dictionary[KEY_CHAINS] != NONE):
-            for keyChain in self.viewFrame.Dictionary[KEY_CHAINS]:
-                keyChains.append(Keychain(repr=keyChain.__repr__()))
-        root = BindFile(filePath=self.viewFrame.Dictionary[PATH], repr=self.viewFrame.Dictionary[ROOT])
-        collection = BindFileCollection(filePath = self.FilePath, bindFile=root, keyChains = keyChains)
-        return collection
+        return self.viewFrame.GetCollection()
 
     def New(self, defaults: bool = False):
         editor = EditBindFile(self.editFrame)
@@ -151,9 +144,6 @@ class EditBindFileCollection(KeystoneEditFrame):
         if (self.SaveCallback != None):
             self.SaveCallback(self)
 
-    def _openLinkedFileCallback(self, path, bind, source):
-        pass
-
     def __init__(self, parent, saveCallback = None):
 
         KeystoneEditFrame.__init__(self, parent)
@@ -175,7 +165,5 @@ class EditBindFileCollection(KeystoneEditFrame):
         self.editFrame.columnconfigure(0, weight=1)
         self.editFrame.rowconfigure(0, weight=1)
         self.Pane.add(self.editFrame)
-        
-        SetOpenLinkedFileCallback(self._openLinkedFileCallback)
 
         self.Reset()
