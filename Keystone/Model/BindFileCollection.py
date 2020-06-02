@@ -7,7 +7,7 @@ from Keystone.Model.Bind import Bind
 from Keystone.Model.BindFile import BindFile, NewBindFile, ReadBindsFromFile
 from Keystone.Model.Keychain import Keychain, BOUND_FILES, NONE, PATH, REPR
 
-from Keystone.Utility.KeystoneUtils import GetUniqueFilePath, RemoveOuterQuotes, RemoveStartAndEndDirDelimiters
+from Keystone.Utility.KeystoneUtils import ComparableFilePath, GetFileName, GetUniqueFilePath, RemoveOuterQuotes, RemoveStartAndEndDirDelimiters
 
 NEW_FILE = "<New File>"
 ROOT = "root"
@@ -19,7 +19,7 @@ KEY_CHAINS = 'key_chains'
 def getBoundFiles(path, bind: Bind, foundFiles, boundFiles):
     for command in bind.GetLoadFileCommands():
         boundPath = command.GetTargetFile()
-        if (os.path.realpath (boundPath) == os.path.realpath (path)):
+        if (ComparableFilePath (boundPath) == ComparableFilePath (path)):
             #self load
             continue
         if (boundFiles == None):
@@ -28,7 +28,7 @@ def getBoundFiles(path, bind: Bind, foundFiles, boundFiles):
             else:
                 action = 'create_a_blank'
         else:
-            match = [b for b in boundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundPath)]
+            match = [b for b in boundFiles if ComparableFilePath (b.FilePath) == ComparableFilePath (boundPath)]
             if (len(match) > 0):
                 action = 'loaded_match'
                 boundFile = match[0]
@@ -44,14 +44,14 @@ def getBoundFiles(path, bind: Bind, foundFiles, boundFiles):
             boundFile = ReadBindsFromFile(boundPath)
 
         #check if already included
-        match = [b for b in foundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundFile.FilePath)]
+        match = [b for b in foundFiles if ComparableFilePath (b.FilePath) == ComparableFilePath (boundFile.FilePath)]
         if (len(match) > 0):
             continue
 
         foundFiles.append(boundFile.Clone())
         for chainBind in boundFile.GetLoadFileBinds():
                 for foundFile in getBoundFiles(path, chainBind, foundFiles, boundFiles):
-                    match = [b for b in foundFiles if os.path.realpath (b.FilePath) == os.path.realpath (boundFile.FilePath)]
+                    match = [b for b in foundFiles if ComparableFilePath (b.FilePath) == ComparableFilePath (boundFile.FilePath)]
                     if (len(match) > 0):
                         continue
                     foundFiles.append(foundFile)
@@ -65,7 +65,7 @@ def GetKeyChains(bindFile: BindFile, path: str, boundFiles = None):
     if (path == None):
         path = ""
     else:
-        path = os.path.abspath(path) 
+        path = ComparableFilePath(path) 
     for bind in bindFile.GetLoadFileBinds():
         chainFiles = getBoundFiles(path, bind, [], boundFiles)
         if (len(chainFiles) > 0):
@@ -129,7 +129,7 @@ class BindFileCollection():
             return
         currentFilePath = os.path.abspath(self.File.FilePath)
         newFilePath = os.path.abspath(newFilePath)
-        if (currentFilePath == newFilePath):
+        if (ComparableFilePath(currentFilePath) == ComparableFilePath(newFilePath)):
             return
         currentDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(currentFilePath))
         newDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(newFilePath))
@@ -138,8 +138,7 @@ class BindFileCollection():
 
         boundFiles = self.GetBoundFiles()
         for boundFile in boundFiles:
-            currentFilePath = os.path.abspath(boundFile.FilePath)
-            newFilePath = currentFilePath.replace(currentDirectory, newDirectory)
+            newFilePath = os.path.join(newDirectory, GetFileName(currentFilePath))
             if ((not overwrite) and (os.path.exists(newFilePath))):
                 newFilePath = GetUniqueFilePath(newFilePath)
             boundFile.RepointFilePaths(newFilePath, overwrite)

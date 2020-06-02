@@ -7,7 +7,7 @@ from Keystone.Model.BindFile import BindFile
 from Keystone.Model.BindFileCollection import BindFileCollection, NEW_FILE
 from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.DefaultKeyBindings import LOAD_COMMAND, SAVE_COMMAND
-from Keystone.Utility.KeystoneUtils import (GetFileName, GetResourcePath,
+from Keystone.Utility.KeystoneUtils import (ComparableFilePath, GetFileName, GetResourcePath,
                                             SetOpenLinkedFileCallback)
 from Keystone.View.EditBindFile import EditBindFile
 from Keystone.Widget.FrameNotebook import FrameNotebook
@@ -21,12 +21,12 @@ class BindFileEditorWindow(tk.Tk):
     def _isOpenFile(self, path):
         if (self.Notebook.Items == None):
             return None
-        thisPath = os.path.realpath(os.path.abspath(path))
+        thisPath = ComparableFilePath(path)
         for item in self.Notebook.Items:
             openPath = item.FilePath
             if (openPath == None):
                 continue
-            openPath = os.path.realpath(os.path.abspath(openPath))
+            openPath = ComparableFilePath(openPath)
             
             if ( thisPath == openPath ):
                 return item

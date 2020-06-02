@@ -65,6 +65,9 @@ def GetFileName(filePath: str) -> str:
     directory = directory #Makes warnings happy
     return fileName
 
+def ComparableFilePath(filePath: str) -> str:
+    return os.path.normcase(os.path.realpath(filePath))
+
 def GetUniqueFilePath(filePath: str, seed: int = 1, paranthetical: bool = True, usedNames: list = None) -> str:
     filePath = os.path.abspath(filePath)
     directory, origFileName = os.path.split(filePath)

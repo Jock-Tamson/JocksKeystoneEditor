@@ -5,7 +5,7 @@ from tkinter import filedialog, ttk
 
 from Keystone.Model.BindFileCollection import NEW_FILE, BindFileCollection, GetKeyChains, KEY_CHAINS, ROOT
 from Keystone.Model.Keychain import Keychain, BOUND_FILES, NONE, KEY, CHORD, PATH, REPR
-from Keystone.Utility.KeystoneUtils import FormatKeyWithChord, GetDirPathFromRoot, GetFileName, FormatKeyWithChord
+from Keystone.Utility.KeystoneUtils import ComparableFilePath, FormatKeyWithChord, GetDirPathFromRoot, GetFileName, FormatKeyWithChord
 from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame, KeystoneLabel
 from Keystone.Widget.KeystoneTree import CHAIN_TAG, EDITED_TAG, FILE_TAG, SELECTED_TAG, KeystoneTree
 from Keystone.Model.BindFile import BindFile
@@ -181,12 +181,12 @@ class BindFileCollectionView(KeystoneFrame):
 
                 #find any changes
                 for newFile in addedChain[BOUND_FILES]:
-                    oldFile = [p for p in modifiedChain[BOUND_FILES] if (os.path.realpath(p[PATH]) == os.path.realpath(newFile[PATH]))]
+                    oldFile = [p for p in modifiedChain[BOUND_FILES] if (ComparableFilePath(p[PATH]) == ComparableFilePath(newFile[PATH]))]
                     if (len(oldFile) == 0):
                         addedFiles.append(newFile)
 
                 for oldFile in modifiedChain[BOUND_FILES]:
-                    newFile = [p for p in addedChain[BOUND_FILES] if (os.path.realpath(p[PATH]) == os.path.realpath(oldFile[PATH]))]
+                    newFile = [p for p in addedChain[BOUND_FILES] if (ComparableFilePath(p[PATH]) == ComparableFilePath(oldFile[PATH]))]
                     if (len(newFile) == 0):
                         removedFiles.append(oldFile)
 
@@ -200,12 +200,12 @@ class BindFileCollectionView(KeystoneFrame):
                     match = [p for p in self.Dictionary[KEY_CHAINS] if ((p[KEY] == keyChain[KEY]) and (p[CHORD] == keyChain[CHORD]))]
 
                     for newFile in keyChain[BOUND_FILES]:
-                        oldFile = [p for p in match[0][BOUND_FILES] if (os.path.realpath(p[PATH]) == os.path.realpath(newFile[PATH]))]
+                        oldFile = [p for p in match[0][BOUND_FILES] if (ComparableFilePath(p[PATH]) == ComparableFilePath(newFile[PATH]))]
                         if (len(oldFile) == 0):
                             addedFiles.append(newFile)
 
                     for oldFile in match[0][BOUND_FILES]:
-                        newFile = [p for p in keyChain[BOUND_FILES] if (os.path.realpath(p[PATH]) == os.path.realpath(oldFile[PATH]))]
+                        newFile = [p for p in keyChain[BOUND_FILES] if (ComparableFilePath(p[PATH]) == ComparableFilePath(oldFile[PATH]))]
                         if (len(newFile) == 0):
                             removedFiles.append(oldFile)
 
@@ -220,16 +220,18 @@ class BindFileCollectionView(KeystoneFrame):
             if ((addedChain != None ) and (modifiedChain == None)):
 
                 #append new chain at end
+                addedChain[EDITOR] = None
+                addedChain[SELECTED_TAG] = False
+                for newFile in  addedChain[BOUND_FILES]:
+                    newFile[EDITOR] = None
+                    newFile[SELECTED_TAG] = False
                 self.Dictionary[KEY_CHAINS].append(addedChain)
-                self.Dictionary[KEY_CHAINS][-1][EDITOR] = None
-                self.Dictionary[KEY_CHAINS][-1][SELECTED_TAG] = False
 
             elif ((addedChain != None) and (modifiedChain != None)):
 
                 #add and remove files in modified chain
                 for oldFile in removedFiles:
-                    if (((oldFile[EDITOR] != None) and oldFile[EDITOR].Dirty.get()) or (not os.path.exists(oldFile[PATH]))):
-                        orphans.append(oldFile)
+                    orphans.append(oldFile)
                     modifiedChain[BOUND_FILES].remove(oldFile)
 
                 for newFile in addedFiles:
@@ -240,8 +242,7 @@ class BindFileCollectionView(KeystoneFrame):
             if (removedChain != None):
 
                 for oldFile in removedChain[BOUND_FILES]:
-                    if (((oldFile[EDITOR] != None) and oldFile[EDITOR].Dirty.get()) or (not os.path.exists(oldFile[PATH]))):
-                        orphans.append(oldFile)
+                    orphans.append(oldFile)
 
                 self.Dictionary[KEY_CHAINS].remove(removedChain)
 

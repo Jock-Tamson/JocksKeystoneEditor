@@ -21,7 +21,7 @@ from Keystone.Windows.BindFileEditorWindow import BindFileEditorWindow
 from Keystone.Windows.KeystoneAbout import ShowHelpAbout
 from Keystone.Utility.KeystoneUtils import GetResourcePath
 
-SET_TO_SHOW_WINDOWS = True
+SET_TO_SHOW_WINDOWS = False
 
 class TestKeystoneWalthroughPages(unittest.TestCase):
 

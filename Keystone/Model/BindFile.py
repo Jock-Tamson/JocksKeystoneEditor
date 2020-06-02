@@ -5,7 +5,7 @@ from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.DefaultKeyBindings import (DEFAULT_BIND,
                                                    DEFAULT_COMMAND,
                                                    DEFAULT_KEY_BINDINGS)
-from Keystone.Utility.KeystoneUtils import (GetFileName, GetUniqueFilePath,
+from Keystone.Utility.KeystoneUtils import (ComparableFilePath, GetFileName, GetUniqueFilePath,
                                             MatchKeyName, RemoveStartAndEndDirDelimiters)
 
 
@@ -72,7 +72,7 @@ class BindFile():
     def RepointFilePaths(self, newFilePath: str, overwrite: bool = False):
         currentFilePath = os.path.abspath(self.FilePath)
         newFilePath = os.path.abspath(newFilePath)
-        if (currentFilePath == newFilePath):
+        if (ComparableFilePath(currentFilePath) == ComparableFilePath(newFilePath)):
             return #No change, exit
         if ((not overwrite) and (os.path.exists(newFilePath))):
             newFilePath = GetUniqueFilePath(newFilePath)
@@ -82,7 +82,7 @@ class BindFile():
         for bind in self.GetLoadFileBinds():
             for command in bind.GetLoadFileCommands():
                 currentTargetPath = command.GetTargetFile()
-                if (currentTargetPath == currentFilePath):
+                if (ComparableFilePath(currentTargetPath) == ComparableFilePath(currentFilePath)):
                     command.SetTargetFile(newFilePath)
                 else:
                     newTargetPath = currentTargetPath.replace(currentDirectory, newDirectory)
