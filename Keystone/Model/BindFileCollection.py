@@ -131,7 +131,6 @@ class BindFileCollection():
         newFilePath = os.path.abspath(newFilePath)
         if (ComparableFilePath(currentFilePath) == ComparableFilePath(newFilePath)):
             return
-        currentDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(currentFilePath))
         newDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(newFilePath))
 
         self.File.RepointFilePaths(newFilePath, overwrite)
