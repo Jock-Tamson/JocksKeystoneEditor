@@ -140,16 +140,35 @@ class BindFileCollectionView(KeystoneFrame):
         if (str(bindFile.GetLoadedFilePaths()) != str(oldBindFile.GetLoadedFilePaths())):
             self._updateTree(chainIndex)
 
+    def GetOrphanage(self, create = False, orphans = NONE):
+        result = None
+
+        if (self.Dictionary[KEY_CHAINS] == NONE):
+            if create:
+                self.Dictionary[KEY_CHAINS] = []
+            else:
+                return None
+
+        match = [p for p in self.Dictionary[KEY_CHAINS] if (p[KEY] == UNBOUND)]
+        if (len(match) > 0):
+            result = match[0]
+        if (result == None):
+            result =  {KEY : UNBOUND , CHORD : "", BOUND_FILES : orphans }
+            self.Dictionary[KEY_CHAINS].append(result)   
+        elif (orphans != NONE):
+            for orphan in orphans:
+                result[BOUND_FILES].append(orphan)
+        return result
+
+
     def _updateTree(self, chainIndex):
         
         orphans = []
-        orphanage = None
+        orphanage = self.GetOrphanage()
         collection = self.GetCollection(True)
         collection.KeyChains = GetKeyChains(collection.File, collection.FilePath, collection.GetBoundFiles())
         newDictionary = self.GetDictionary(collection)
-        match = [p for p in self.Dictionary[KEY_CHAINS] if (p[KEY] == UNBOUND)]
-        if (len(match) > 0):
-            orphanage = match[0]
+        if (orphanage != None):
             for orphan in orphanage[BOUND_FILES]:
                 orphans.append(orphan)
             self.Dictionary[KEY_CHAINS].remove(orphanage) #to remove or replace at end
@@ -254,8 +273,7 @@ class BindFileCollectionView(KeystoneFrame):
                     modifiedChain[BOUND_FILES].append(newFile)
 
         if (len(orphans) != 0):
-            orphanage = {KEY : UNBOUND , CHORD : "", BOUND_FILES : orphans }
-            self.Dictionary[KEY_CHAINS].append(orphanage)   
+            orphanage = self.GetOrphanage(True, orphans)
 
         self.RefreshTree()            
 

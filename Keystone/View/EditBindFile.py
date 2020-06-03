@@ -184,7 +184,7 @@ class EditBindFile(KeystoneEditFrame):
                     break
 
             if (replaceItem != None):
-                response = messagebox.askokcancel("Existing Bind", "Overwrite the existing bind for %s\n\n%s\n\nwith the new bind\n\n%s?" % (newKeyWithChord, replaceItem.Item.Bind, bind ))
+                response = messagebox.askokcancel("Existing Bind", "Overwrite the existing bind for %s\n\n%s\n\nwith the new bind\n\n%s?" % (newKeyWithChord, replaceItem.Item.Get(), bind ))
                 if (response):
                     self.view.Remove(replaceItem)
                 else:

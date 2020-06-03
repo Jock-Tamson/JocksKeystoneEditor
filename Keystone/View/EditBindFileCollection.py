@@ -18,7 +18,13 @@ class EditBindFileCollection(KeystoneEditFrame):
 
     def SetEditedItem(self, *args):
         editor = args[0]
+        hadChildren = (len(self.viewFrame.Tree.GetAllChildren()) > 0)
         item = self.viewFrame.GetEditedItem(editor)
+        hasChildren = (len(self.viewFrame.Tree.GetAllChildren()) > 0)
+        if (hasChildren and (not hadChildren)):
+            self.Pane.insert(0, self.viewFrame)
+        elif (hadChildren and (not hasChildren)):
+            self.Pane.forget(self.viewFrame)
         self.viewFrame.SetEdited(item, True)
         if (self.EditedItems == None):
             self.EditedItems = [editor]

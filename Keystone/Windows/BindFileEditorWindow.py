@@ -5,14 +5,17 @@ from tkinter import filedialog, messagebox, ttk
 
 from Keystone.Model.BindFile import BindFile
 from Keystone.Model.BindFileCollection import BindFileCollection, NEW_FILE
+from Keystone.Model.Keychain import BOUND_FILES, PATH, REPR
 from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.DefaultKeyBindings import LOAD_COMMAND, SAVE_COMMAND
 from Keystone.Utility.KeystoneUtils import (ComparableFilePath, GetFileName, GetResourcePath,
                                             SetOpenLinkedFileCallback)
-from Keystone.View.EditBindFile import EditBindFile
+from Keystone.View.EditBindFileCollection import EditBindFileCollection
+from Keystone.View.BindFileCollectionView import EDITOR
 from Keystone.Widget.FrameNotebook import FrameNotebook
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
 from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame
+from Keystone.Widget.KeystoneTree import SELECTED_TAG
 from Keystone.Windows.KeystoneAbout import ShowHelpAbout
 from Keystone.Windows.KeystoneWalkthroughPages import ShowIntroWalkthrough
 
@@ -88,66 +91,29 @@ class BindFileEditorWindow(tk.Tk):
 
     def OnSaveCallback(self, editor, *args):
         self.SetTabName(editor = editor)
-    
-    def _onSaveBoundFiles(self, editor, promptForPath = False):
-        if (editor == None):
-            return
-
-        bindFile = editor.Get(commitChanges = False)
-        if (len(bindFile.GetLoadFileBinds()) == 0):
-            editor.Save(promptForPath=promptForPath)
-            return
-        boundFilesSource = self._getBoundFilesSource()
-        bindFileCollection = BindFileCollection()
-        bindFileCollection.Load(editor.FilePath, bindFile = bindFile, boundFilesSource = boundFilesSource)
-        boundFiles = bindFileCollection.GetBoundFiles()
-        if ((len(boundFiles) == 0) and (not promptForPath)):
-            editor.Save(promptForPath=promptForPath)
-            return
-
-        response = messagebox.askyesno('Load File Commands Found', "Repoint file paths and save linked files to the same location?")
-        if (not response):
-            editor.Save(promptForPath=promptForPath)
-
-        if (promptForPath):
-            filePath = editor.PromptForFilePath()
-            if (filePath == ''):
-                return
-        else:
-            filePath = editor.FilePath
-
-        #close the bound files we are saving to reopen
-        for boundFile in boundFiles:
-            item = self._isOpenFile(boundFile.FilePath)
-            self.Notebook.RemoveItem(item)
-
-        bindFileCollection.Save(filePath=filePath, overwrite = (not promptForPath))
-
-        boundFiles = bindFileCollection.GetBoundFiles()
-
-        editor.Save()
-
-        #reopen bound files
-        self.SuppressCallback = True
-        try:
-            for boundFile in boundFiles:
-                self.NewTab("open", path=boundFile.FilePath)
-        finally:
-            self.SuppressCallback = False
 
     def OnFileSave(self):
+        collectionEditor = self.Notebook.SelectedFrame()
+        if (collectionEditor == None):
+            return
         editor = self.Notebook.SelectedFrame()
         if (editor == None):
             return
-        self._onSaveBoundFiles(editor)
+        editor.Save(True)
 
     def OnFileSaveAs(self):
+        collectionEditor = self.Notebook.SelectedFrame()
+        if (collectionEditor == None):
+            return
         editor = self.Notebook.SelectedFrame()
         if (editor == None):
             return
-        self._onSaveBoundFiles(editor, promptForPath=True)
+        editor.Save()
 
     def CancelFromSavePrompt(self)->bool:
+        collectionEditor = self.Notebook.SelectedFrame()
+        if (collectionEditor == None):
+            return
         editor = self.Notebook.SelectedFrame()
         if (editor == None):
             return False
@@ -163,6 +129,9 @@ class BindFileEditorWindow(tk.Tk):
         return False
 
     def OnFileClose(self):
+        collectionEditor = self.Notebook.SelectedFrame()
+        if (collectionEditor == None):
+            return
         editor = self.Notebook.SelectedFrame()
         if (editor == None):
             return
@@ -192,7 +161,10 @@ class BindFileEditorWindow(tk.Tk):
             self.NewTab("open", filePath)
 
     def OnUploadFile(self):
-        editor = self.Notebook.SelectedFrame()
+        collectionEditor = self.Notebook.SelectedFrame()
+        if (collectionEditor == None):
+            return
+        editor = self.Notebook.SelectedFrame().editor
         if (editor == None):
             return
         if (self.CancelFromSavePrompt()):
@@ -211,7 +183,10 @@ class BindFileEditorWindow(tk.Tk):
             "You can add this command as a bind using the Add Upload Bind menu item.")
 
     def OnAddUploadBind(self):
-        editor = self.Notebook.SelectedFrame()
+        collectionEditor = self.Notebook.SelectedFrame()
+        if (collectionEditor == None):
+            return
+        editor = self.Notebook.SelectedFrame().editor
         if (editor == None):
             return
         if ((editor.FilePath == None) and self.CancelFromSavePrompt()):
@@ -233,11 +208,11 @@ class BindFileEditorWindow(tk.Tk):
         self.destroy()
 
     def _getBoundFilesSource(self):
-        return [e.Get(commitChanges = False) for e in self.Notebook.Items if e.FilePath != None]
+        return [e.Get() for e in self.Notebook.Items if e.FilePath != None]
 
     def _onSelectCallback(self, binds, *args):   
 
-        editor = self.Notebook.SelectedFrame()
+        editor = self.Notebook.SelectedFrame().editor
         bindFilePath = editor.FilePath
         options = {}
         options['initialfile'] = "keybinds.kst"
@@ -258,8 +233,11 @@ class BindFileEditorWindow(tk.Tk):
         
 
     def OnImportBinds(self):
-        editor = self.Notebook.SelectedFrame()
-        if (editor == None):
+        collectionEditor = self.Notebook.SelectedFrame()
+        if (collectionEditor == None):
+            return
+        bindFileEditor = self.Notebook.SelectedFrame().editor
+        if (bindFileEditor == None):
             return
         if (self.CancelFromSavePrompt()):
             return
@@ -277,7 +255,7 @@ class BindFileEditorWindow(tk.Tk):
         importCollection = BindFileCollection()
         importCollection.Deserialize(fileName)
         boundFiles = importCollection.GetBoundFiles()
-        if ((editor.FilePath == None) and (len(boundFiles) > 0)):
+        if ((bindFileEditor.FilePath == None) and (len(boundFiles) > 0)):
             response = messagebox.askokcancel('Path Needed For Linked Files',
                 'You must choose a target path for this file to set paths for linked files.\n'+
                 'The paths will be set, but no files will be saved yet.')
@@ -290,29 +268,35 @@ class BindFileEditorWindow(tk.Tk):
             options['defaultextension'] = "txt"
             pointPath = filedialog.asksaveasfilename(**options)
             if (pointPath == ''):
-                return False
+                return False          
+            BindFileCollection.FilePath = pointPath
         else:
-            pointPath = editor.FilePath
+            pointPath = bindFileEditor.FilePath
 
         importCollection.RepointFilePaths(pointPath)
         if (pointPath != None):
-            editor.FilePath = pointPath
-            editor.PathLabel.configure(text=editor.FilePath)
-            self.SetTabName(editor)
+            bindFileEditor.FilePath = pointPath
+            bindFileEditor.PathLabel.configure(text=bindFileEditor.FilePath)
+            self.SetTabName(collectionEditor)
 
         try:
             self.SuppressCallback = True
-            for bindFile in importCollection.GetBoundFiles():
-                self.NewTab("new", bindFile = bindFile)
+            boundFiles = importCollection.GetBoundFiles()
+            if (len(boundFiles) > 0):
+                #put them in the orphange so refresh can find them
+                orphans = [{PATH : boundFile.FilePath, REPR : boundFile.__repr__(), EDITOR : None, SELECTED_TAG : False} for boundFile in boundFiles]
+                collectionEditor.viewFrame.GetOrphanage(True, orphans)
         finally:
             self.SuppressCallback = False
 
-        self.Notebook.SelectTabForItem(editor)
         for bind in importCollection.File.Binds:
-            editor.NewBindCallback(True, bind)
+            bindFileEditor.NewBindCallback(True, bind)
 
     def OnExportBinds(self):
-        editor = self.Notebook.SelectedFrame()
+        collectionEditor = self.Notebook.SelectedFrame()
+        if (collectionEditor == None):
+            return
+        editor = self.Notebook.SelectedFrame().editor
         if (editor == None):
             return
         if (self.CancelFromSavePrompt()):
@@ -386,7 +370,7 @@ class BindFileEditorWindow(tk.Tk):
         walkthroughButton.grid()
         self.FirstFrame.pack(fill=tk.BOTH, expand=True, side=tk.TOP)
 
-        self.Notebook = FrameNotebook(win, EditBindFile, [None, False, False, self.OnSaveCallback])
+        self.Notebook = FrameNotebook(win, EditBindFileCollection, [self.OnSaveCallback])
         self.ShowingNotebook = False
         self.SuppressCallback = False
 

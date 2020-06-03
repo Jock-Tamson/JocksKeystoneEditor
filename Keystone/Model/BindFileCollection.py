@@ -117,6 +117,7 @@ class BindFileCollection():
     def RepointFilePaths(self, newFilePath: str, overwrite: bool = False):
 
         if (newFilePath == None):
+            self.FilePath = None
             self.File.FilePath = None
 
             boundFiles = self.GetBoundFiles()
@@ -129,6 +130,7 @@ class BindFileCollection():
             return
         currentFilePath = os.path.abspath(self.File.FilePath)
         newFilePath = os.path.abspath(newFilePath)
+        self.FilePath = newFilePath
         if (ComparableFilePath(currentFilePath) == ComparableFilePath(newFilePath)):
             return
         newDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(newFilePath))
