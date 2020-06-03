@@ -8,6 +8,7 @@ from Keystone.Model.Keychain import Keychain, BOUND_FILES, NONE, KEY, CHORD, PAT
 from Keystone.Utility.KeystoneUtils import ComparableFilePath, FormatKeyWithChord, GetDirPathFromRoot, GetFileName, FormatKeyWithChord
 from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame, KeystoneLabel
 from Keystone.Widget.KeystoneTree import CHAIN_TAG, EDITED_TAG, FILE_TAG, SELECTED_TAG, KeystoneTree
+from Keystone.Model.Bind import UNBOUND
 from Keystone.Model.BindFile import BindFile
 
         
@@ -20,16 +21,20 @@ class BindFileCollectionView(KeystoneFrame):
         result = []
         
         tags = [FILE_TAG, self.BuildFileTag(-1, -1)]
-        if (((self.Dictionary[EDITOR] != None) and (self.Dictionary[EDITOR].Dirty.get())) or self.Dictionary[SELECTED_TAG]) :
-            tags.append(EDITED_TAG)
 
         if (self.Directory == NEW_FILE):
             fileName = NEW_FILE
             directory = ""
             tags.append(EDITED_TAG)
         else:
-            fileName = GetFileName(self.Dictionary[PATH])
+            filePath = os.path.abspath(self.Dictionary[PATH])
+            fileName = GetFileName(filePath)
             directory = self.Directory
+            if (((self.Dictionary[EDITOR] != None) and (self.Dictionary[EDITOR].Dirty.get())) or (not os.path.exists(filePath))) :
+                tags.append(EDITED_TAG)
+                
+        if (self.Dictionary[SELECTED_TAG]):
+            tags.append(SELECTED_TAG)
 
         result.append((0, fileName, tags))
 
@@ -138,124 +143,121 @@ class BindFileCollectionView(KeystoneFrame):
     def _updateTree(self, chainIndex):
         
         orphans = []
-        addedFiles = []
-        removedFiles = []
-        collection = self.GetCollection()
+        orphanage = None
+        collection = self.GetCollection(True)
         collection.KeyChains = GetKeyChains(collection.File, collection.FilePath, collection.GetBoundFiles())
-        newDictionary = collection.GetDictionary()
-        addedChain = None
-        removedChain = None
-        modifiedChain = None
+        newDictionary = self.GetDictionary(collection)
+        match = [p for p in self.Dictionary[KEY_CHAINS] if (p[KEY] == UNBOUND)]
+        if (len(match) > 0):
+            orphanage = match[0]
+            for orphan in orphanage[BOUND_FILES]:
+                orphans.append(orphan)
+            self.Dictionary[KEY_CHAINS].remove(orphanage) #to remove or replace at end
 
-        #we are in a chain so we know it was modified
-        if (chainIndex >= 0):
-            modifiedChain = self.Dictionary[KEY_CHAINS][chainIndex]
+        addedChains = []
+        removedChains = []
+        modifiedChains = []
+
         if ((newDictionary[KEY_CHAINS] == NONE) and (self.Dictionary[KEY_CHAINS] == NONE)):
             #no key chains, no change
             return
         elif (newDictionary[KEY_CHAINS] == NONE):
             #all chains removed
-            removedChain = self.Dictionary[KEY_CHAINS][0]
+            for removedChain in self.Dictionary[KEY_CHAINS]:
+                removedChains.append(removedChain)
+                for oldFile in removedChain[BOUND_FILES]:
+                    orphans.append(oldFile)
         elif (self.Dictionary[KEY_CHAINS] == NONE):
-            #first chain added
-            addedChain = newDictionary[KEY_CHAINS][0]
+            #chains added
+            for addedChain in newDictionary[KEY_CHAINS]:
+                addedChains.append(newDictionary[KEY_CHAINS])
         else:
-
-            #were chains added?
-            for keyChain in newDictionary[KEY_CHAINS]:
-                match = [p for p in self.Dictionary[KEY_CHAINS] if ((p[KEY] == keyChain[KEY]) and (p[CHORD] == keyChain[CHORD]))]
-                if (len(match) == 0):
-                    addedChain = keyChain
-                    break
-            
+      
             #were chains removed
-            for keyChain in self.Dictionary[KEY_CHAINS]:
-                match = [p for p in newDictionary[KEY_CHAINS] if ((p[KEY] == keyChain[KEY]) and (p[CHORD] == keyChain[CHORD]))]
+            for oldChain in self.Dictionary[KEY_CHAINS]:
+                match = [p for p in newDictionary[KEY_CHAINS] if ((p[KEY] == oldChain[KEY]) and (p[CHORD] == oldChain[CHORD]))]
                 if (len(match) == 0):
-                    removedChain = keyChain
-                    break
+                    removedChains.append(oldChain)
+                    for oldFile in oldChain[BOUND_FILES]:
+                        orphans.append(oldFile)
 
-            if ((addedChain == None) and (removedChain == None) and (modifiedChain != None)):
-                #nothing added or removed, but in a chain.  This chain may have been modified
-                addedChain = [p for p in newDictionary[KEY_CHAINS] if ((p[KEY] == modifiedChain[KEY]) and (p[CHORD] == modifiedChain[CHORD]))][0]
-
-                #find any changes
-                for newFile in addedChain[BOUND_FILES]:
-                    oldFile = [p for p in modifiedChain[BOUND_FILES] if (ComparableFilePath(p[PATH]) == ComparableFilePath(newFile[PATH]))]
+            #were chains added or modified?
+            for newChain in newDictionary[KEY_CHAINS]:
+                match = [p for p in self.Dictionary[KEY_CHAINS] if ((p[KEY] == newChain[KEY]) and (p[CHORD] == newChain[CHORD]))]
+                if (len(match) == 0):
+                    addedChains.append(newChain)
+                    continue
+                oldChain = match[0]
+                addedFiles = []
+                removedFiles = []
+                for newFile in newChain[BOUND_FILES]:
+                    oldFile = [p for p in oldChain[BOUND_FILES] if (ComparableFilePath(p[PATH]) == ComparableFilePath(newFile[PATH]))]
                     if (len(oldFile) == 0):
                         addedFiles.append(newFile)
 
-                for oldFile in modifiedChain[BOUND_FILES]:
-                    newFile = [p for p in addedChain[BOUND_FILES] if (ComparableFilePath(p[PATH]) == ComparableFilePath(oldFile[PATH]))]
+                for oldFile in oldChain[BOUND_FILES]:
+                    newFile = [p for p in newChain[BOUND_FILES] if (ComparableFilePath(p[PATH]) == ComparableFilePath(oldFile[PATH]))]
                     if (len(newFile) == 0):
                         removedFiles.append(oldFile)
+                        orphans.append(oldFile)
 
                 if ((len(addedFiles) == 0) and (len(removedFiles) == 0)):
-                    #no change
-                    return
+                    continue
+                
+                modifiedChains.append([oldChain, addedFiles, removedFiles])
 
-            elif ((addedChain == None) and (removedChain == None) and (modifiedChain == None)):
-                #in the root but not remapping, did a chain change?
-                for keyChain in newDictionary[KEY_CHAINS]:
-                    match = [p for p in self.Dictionary[KEY_CHAINS] if ((p[KEY] == keyChain[KEY]) and (p[CHORD] == keyChain[CHORD]))]
-
-                    for newFile in keyChain[BOUND_FILES]:
-                        oldFile = [p for p in match[0][BOUND_FILES] if (ComparableFilePath(p[PATH]) == ComparableFilePath(newFile[PATH]))]
-                        if (len(oldFile) == 0):
-                            addedFiles.append(newFile)
-
-                    for oldFile in match[0][BOUND_FILES]:
-                        newFile = [p for p in keyChain[BOUND_FILES] if (ComparableFilePath(p[PATH]) == ComparableFilePath(oldFile[PATH]))]
-                        if (len(newFile) == 0):
-                            removedFiles.append(oldFile)
-
-                    if ((len(addedFiles) != 0) or (len(removedFiles) != 0)):
-                        addedChain = keyChain
-                        modifiedChain = match[0]
-                        break
+            if ((len(addedChains) == 0) and (len(removedChains) == 0) and (len(modifiedChains) == 0)):
+                #no change
+                if (len(orphans) > 0):
+                    #need to put this back
+                    self.Dictionary[KEY_CHAINS].append(orphanage)   
+                return
             
-                if (addedChain == None):
-                    return
+        adoptedOrphans = []
+        def adoptionProcess(newFile):
+            result = newFile
+            adoptees = [p for p in orphans if (ComparableFilePath(p[PATH]) == ComparableFilePath(newFile[PATH]))]
+            custodyBattles = [p for p in adoptedOrphans if (ComparableFilePath(p[PATH]) == ComparableFilePath(newFile[PATH]))]
+            if (len(adoptees) > 0):
+                result = adoptees[0]
+                adoptedOrphans.append(adoptees[0])
+                for orphan in adoptees:
+                    orphans.remove(orphan)
+            elif (len(custodyBattles) > 0):
+                result = custodyBattles[0]
+            return result
+            
+            
 
-            if ((addedChain != None ) and (modifiedChain == None)):
-
-                #append new chain at end
+        if (len(addedChains) > 0):
+            for addedChain in addedChains:
+            #append new chain at end
                 addedChain[EDITOR] = None
                 addedChain[SELECTED_TAG] = False
                 for newFile in  addedChain[BOUND_FILES]:
-                    newFile[EDITOR] = None
-                    newFile[SELECTED_TAG] = False
+                    newFile = adoptionProcess(newFile)
                 self.Dictionary[KEY_CHAINS].append(addedChain)
 
-            elif ((addedChain != None) and (modifiedChain != None)):
+        if (len(removedChains) > 0):
+            for removedChain in removedChains:
+                self.Dictionary[KEY_CHAINS].remove(removedChain)
 
+        if (len(modifiedChains) > 0):
+            
+            for modifiedChain, addedFiles, removedFiles in modifiedChains:
                 #add and remove files in modified chain
                 for oldFile in removedFiles:
-                    orphans.append(oldFile)
                     modifiedChain[BOUND_FILES].remove(oldFile)
 
                 for newFile in addedFiles:
-                    newFile[EDITOR] = None
-                    newFile[SELECTED_TAG] = False
+                    newFile = adoptionProcess(newFile)
                     modifiedChain[BOUND_FILES].append(newFile)
 
-            if (removedChain != None):
+        if (len(orphans) != 0):
+            orphanage = {KEY : UNBOUND , CHORD : "", BOUND_FILES : orphans }
+            self.Dictionary[KEY_CHAINS].append(orphanage)   
 
-                for oldFile in removedChain[BOUND_FILES]:
-                    orphans.append(oldFile)
-
-                self.Dictionary[KEY_CHAINS].remove(removedChain)
-
-            if (len(orphans) != 0):
-                match = [p for p in self.Dictionary[KEY_CHAINS] if (p[KEY] == "UNBOUND")]
-                if (len(match) == 0):
-                    orphanage = {KEY : "UNBOUND" , CHORD : "", BOUND_FILES : orphans }
-                    self.Dictionary[KEY_CHAINS].append(orphanage)
-                else:
-                    for orphan in orphans:
-                        match[0][BOUND_FILES].append(orphan)      
-
-            self.RefreshTree()            
+        self.RefreshTree()            
 
     def Get(self, fileTag)->BindFile:
         chainIndex, fileIndex = self.ParseFileTag(fileTag)
@@ -267,12 +269,16 @@ class BindFileCollectionView(KeystoneFrame):
             _repr = self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][REPR]
         return BindFile(repr=_repr, filePath = filePath )
 
-    def GetCollection(self):
+    def GetCollection(self, includeUnbound = False):
         if (self.Dictionary == None):
             return None
         keyChains = []
         if (self.Dictionary[KEY_CHAINS] != NONE):
-            for keyChain in self.Dictionary[KEY_CHAINS]:
+            if includeUnbound:
+                chains = self.Dictionary[KEY_CHAINS]
+            else:
+                chains = [p for p in self.Dictionary[KEY_CHAINS] if p[KEY] != UNBOUND]
+            for keyChain in chains:
                 boundFiles = [BindFile(repr = p[REPR], filePath = p[PATH]) for p in keyChain[BOUND_FILES]]
                 newChain = Keychain(key = keyChain[KEY], chord = keyChain[CHORD], boundFiles = boundFiles)
                 keyChains.append(newChain)
@@ -304,24 +310,30 @@ class BindFileCollectionView(KeystoneFrame):
         self.Directory = ""
         self.Tree.heading("#0", text="Keybind Collection", anchor='w')
 
+    def GetDictionary(self, bindFileCollection):
+
+        result = bindFileCollection.GetDictionary()
+
+        #add editor entry to dictiionary
+        result[EDITOR] = None
+        result[SELECTED_TAG] = False
+        keyChains = result[KEY_CHAINS]
+        if (keyChains != NONE):
+            for keyChain in keyChains:
+                boundFiles = keyChain[BOUND_FILES]
+                if (boundFiles == NONE):
+                    continue
+                for boundFile in boundFiles:
+                    boundFile[EDITOR] = None
+                    boundFile[SELECTED_TAG] = False
+
+        return result
+
     def Load(self, bindFileCollection):
         self.Reset()
         if (bindFileCollection != None):
 
-            self.Dictionary = bindFileCollection.GetDictionary()
-
-            #add editor entry to dictiionary
-            self.Dictionary[EDITOR] = None
-            self.Dictionary[SELECTED_TAG] = False
-            keyChains = self.Dictionary[KEY_CHAINS]
-            if (keyChains != NONE):
-                for keyChain in keyChains:
-                    boundFiles = keyChain[BOUND_FILES]
-                    if (boundFiles == NONE):
-                        continue
-                    for boundFile in boundFiles:
-                        boundFile[EDITOR] = None
-                        boundFile[SELECTED_TAG] = False
+            self.Dictionary = self.GetDictionary(bindFileCollection)
 
             if (bindFileCollection.FilePath == None):
                 self.Directory = NEW_FILE
@@ -331,6 +343,24 @@ class BindFileCollectionView(KeystoneFrame):
             self.Tree.heading("#0", text=self.Directory, anchor='w')
 
             self.RefreshTree()
+
+    def OnSelectItem(self, *args):
+        self.Dictionary[SELECTED_TAG] = False
+        chains = self.Dictionary[KEY_CHAINS]
+        if (chains != NONE):
+            for chain in chains:
+                if (chain[BOUND_FILES] == None):
+                    continue
+                for entry in chain[BOUND_FILES]:
+                    entry[SELECTED_TAG] = False
+        if (self.Tree.HasTag(self.Tree.SelectedItem, FILE_TAG)):
+            tags = self.Tree.GetTags(self.Tree.SelectedItem)
+            fieldTag = tags[1]
+            chainIndex, fileIndex = self.ParseFileTag(fieldTag)
+            if (chainIndex < 0):
+                self.Dictionary[SELECTED_TAG] = True
+            else:
+                self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][SELECTED_TAG] = True
 
     def __init__(self, parent, showScroll = False):
 
@@ -365,3 +395,5 @@ class BindFileCollectionView(KeystoneFrame):
         browseFrame.columnconfigure(0, weight=1)
         browseFrame.columnconfigure(1, weight=0)
         self.Directory = ""
+
+        self.Tree.OnSelect.append(self.OnSelectItem)
