@@ -94,10 +94,12 @@ def RemoveStartAndEndDirDelimiters(dirName: str) -> str:
 
 #returns path from root path
 def GetDirPathFromRoot(rootPath, fullPath) -> str:
-    rootPath = os.path.abspath(rootPath)
     fullPath = os.path.abspath(fullPath)
-    if (rootPath != fullPath):
-        dirName = fullPath.replace(rootPath, "")
+    compRootPath = ComparableFilePath(rootPath)
+    compFullPath = ComparableFilePath(fullPath)
+    if (compRootPath != compFullPath):
+        dirName = compFullPath.replace(compRootPath, "")
+        dirName = fullPath[-len(dirName):] #to retain captilization
         dirName = RemoveStartAndEndDirDelimiters(dirName)
         return dirName
     else:
