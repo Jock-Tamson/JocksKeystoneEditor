@@ -1,13 +1,14 @@
 from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.KeyNames import CHORD_KEYS, KEY_NAMES
 from Keystone.Utility.KeystoneUtils import FormatKeyWithChord, MatchKeyName, RemoveOuterQuotes
+    
+UNBOUND = "UNBOUND"
 
 #object for a keybind of 1 or more commands
 class Bind():
 
     COMMAND_SEPARATOR = "$$"
     PADDED_COMMAND_SEPARATOR = "%s " % COMMAND_SEPARATOR
-    UNBOUND = "UNBOUND"
 
     #Parse key and command list from representative string
     def Parse(self, repr: str):
@@ -25,7 +26,7 @@ class Bind():
         else:
             self.Key = parts[0].strip()
 
-        if ((commands == "") or (commands == self.UNBOUND)):
+        if ((commands == "") or (commands == UNBOUND)):
             self.Commands = None
         else:
             #split on command separator and send parts to SlashCommand init
@@ -104,7 +105,7 @@ class Bind():
         
     def GetCommands(self):
         if (self.Commands == None):
-            return self.UNBOUND
+            return UNBOUND
         else:
             commands = self.COMMAND_SEPARATOR.join([str(p) for p in self.Commands])
             return "\"%s\"" % (commands)
