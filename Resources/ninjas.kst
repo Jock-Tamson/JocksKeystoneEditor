@@ -1,0 +1,35 @@
+{"path": "C:\\keybinds.txt" 
+"description": "Sandophan's Numpad binds for Ninjas.\n
+from https://forums.homecomingservers.com/topic/6500-the-homecoming-of-sandolphans-mm-numpad-binds/ \n
+\n
+The Basics, how to use these binds\n
+\n 
+The active controls can be categorized by which row the key appears on on the numpad.\n
+\n 
+1-Row and 0 : Select what pet to command\n 
+\n  
+    0: All Pets\n  
+    1: "Minion" Pets\n  
+    2: "Lieutenant" Pets\n  
+    3: "Boss" Pet\n  
+\n   
+4-Row : Set stance\n  
+\n   
+    4: Agressive\n  
+    5: Defensive\n  
+    6: Passive\n  
+\n   
+7-Row : Issue command\n  
+\n   
+    7: Attack my target\n  
+    8: Follow Me\n  
+    9: Goto\n  
+\n   
+Other Keys: Summons and Upgrades\n  
+\n   
+    / : Summon "minion" pet\n  
+    * : Summon "Lieutenant" pet\n  
+    - : Summon "Boss" pet\n  
+    + : Equip (First Upgrade)\n  
+    Enter: Upgrade (Second Upgrade)\n ", 
+"root": "numpad0 \"bindloadfilesilent \"C:\\all.txt\"\"\nnumpad1 \"bindloadfilesilent \"C:\\Genin.txt\"\"\nnumpad2 \"bindloadfilesilent \"C:\\Jounin.txt\"\"\nnumpad3 \"bindloadfilesilent \"C:\\Oni.txt\"\"\ndivide \"powexec_location me call genin\"\nmultiply \"powexec_location me call jounin\"\nsubtract \"powexec_location me oni\"\nadd \"powexec_name train ninjas\"\nnumpadenter \"powexec_name kuji in zen\"", "key_chains": [{"key": "NUMPAD0", "chord": "", "bound_files": [{"path": "C:\\all.txt", "repr": "numpad4 \"petcom_all aggressive\"\nnumpad5 \"petcom_all defensive\"\nnumpad6 \"petcom_all passive\"\nnumpad7 \"petcom_all attack\"\nnumpad8 \"petcom_all follow\"\nnumpad9 \"petcom_all goto\"\nlctrl+decimal \"petcom_all dismiss\""}]}, {"key": "NUMPAD1", "chord": "", "bound_files": [{"path": "C:\\Genin.txt", "repr": "numpad4 \"petcom_pow genin aggressive\"\nnumpad5 \"petcom_pow genin defensive\"\nnumpad6 \"petcom_pow genin passive\"\nnumpad7 \"petcom_pow genin attack\"\nnumpad8 \"petcom_pow genin follow\"\nnumpad9 \"petcom_pow genin goto\"\nlctrl+decimal \"petcom_pow genin dismiss\""}]}, {"key": "NUMPAD2", "chord": "", "bound_files": [{"path": "C:\\Jounin.txt", "repr": "numpad4 \"petcom_pow jounin aggressive\"\nnumpad5 \"petcom_pow jounin defensive\"\nnumpad6 \"petcom_pow jounin passive\"\nnumpad7 \"petcom_pow jounin attack\"\nnumpad8 \"petcom_pow jounin follow\"\nnumpad9 \"petcom_pow jounin goto\"\nlctrl+decimal \"petcom_pow jounin dismiss\""}]}, {"key": "NUMPAD3", "chord": "", "bound_files": [{"path": "C:\\Oni.txt", "repr": "numpad4 \"petcom_pow oni aggressive\"\nnumpad5 \"petcom_pow oni defensive\"\nnumpad6 \"petcom_pow oni passive\"\nnumpad7 \"petcom_pow oni attack\"\nnumpad8 \"petcom_pow oni follow\"\nnumpad9 \"petcom_pow oni goto\"\nlctrl+decimal \"petcom_pow oni dismiss\""}]}]}

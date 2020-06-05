@@ -1,0 +1,35 @@
+{"path": "C:\\keybinds.txt" 
+"description": "Sandophan's Numpad binds for Necromancy.\n
+from https://forums.homecomingservers.com/topic/6500-the-homecoming-of-sandolphans-mm-numpad-binds/ \n
+\n
+The Basics, how to use these binds\n
+\n 
+The active controls can be categorized by which row the key appears on on the numpad.\n
+\n 
+1-Row and 0 : Select what pet to command\n 
+\n  
+    0: All Pets\n  
+    1: "Minion" Pets\n  
+    2: "Lieutenant" Pets\n  
+    3: "Boss" Pet\n  
+\n   
+4-Row : Set stance\n  
+\n   
+    4: Agressive\n  
+    5: Defensive\n  
+    6: Passive\n  
+\n   
+7-Row : Issue command\n  
+\n   
+    7: Attack my target\n  
+    8: Follow Me\n  
+    9: Goto\n  
+\n   
+Other Keys: Summons and Upgrades\n  
+\n   
+    / : Summon "minion" pet\n  
+    * : Summon "Lieutenant" pet\n  
+    - : Summon "Boss" pet\n  
+    + : Equip (First Upgrade)\n  
+    Enter: Upgrade (Second Upgrade)\n ", 
+"root": "numpad0 \"bindloadfilesilent \"C:\\all.txt\"\"\nnumpad1 \"bindloadfilesilent \"C:\\Zombies.txt\"\"\nnumpad2 \"bindloadfilesilent \"C:\\GraveKnights.txt\"\"\nnumpad3 \"bindloadfilesilent \"C:\\Lich.txt\"\"\ndivide \"powexec_location me zombie horde\"\nmultiply \"powexec_location me grave knight\"\nsubtract \"powexec_location me lich\"\nadd \"powexec_name enchant undead\"\nnumpadenter \"powexec_name dark empowerment\"", "key_chains": [{"key": "NUMPAD0", "chord": "", "bound_files": [{"path": "C:\\all.txt", "repr": "numpad4 \"petcom_all aggressive\"\nnumpad5 \"petcom_all defensive\"\nnumpad6 \"petcom_all passive\"\nnumpad7 \"petcom_all attack\"\nnumpad8 \"petcom_all follow\"\nnumpad9 \"petcom_all goto\"\nlctrl+decimal \"petcom_all dismiss\""}]}, {"key": "NUMPAD1", "chord": "", "bound_files": [{"path": "C:\\Zombies.txt", "repr": "numpad4 \"petcom_pow zombie aggressive\"\nnumpad5 \"petcom_pow zombie defensive\"\nnumpad6 \"petcom_pow zombie passive\"\nnumpad7 \"petcom_pow zombie attack\"\nnumpad8 \"petcom_pow zombie follow\"\nnumpad9 \"petcom_pow zombie goto\"\nlctrl+decimal \"petcom_pow zombie dismiss\""}]}, {"key": "NUMPAD2", "chord": "", "bound_files": [{"path": "C:\\GraveKnights.txt", "repr": "numpad4 \"petcom_pow grave knights aggressive\"\nnumpad5 \"petcom_pow grave knights defensive\"\nnumpad6 \"petcom_pow grave knights passive\"\nnumpad7 \"petcom_pow grave knights attack\"\nnumpad8 \"petcom_pow grave knights follow\"\nnumpad9 \"petcom_pow grave knights goto\"\nlctrl+decimal \"petcom_pow grave knights dismiss\""}]}, {"key": "NUMPAD3", "chord": "", "bound_files": [{"path": "C:\\Lich.txt", "repr": "numpad4 \"petcom_pow lich aggressive\"\nnumpad5 \"petcom_pow lich defensive\"\nnumpad6 \"petcom_pow lich passive\"\nnumpad7 \"petcom_pow lich attack\"\nnumpad8 \"petcom_pow lich follow\"\nnumpad9 \"petcom_pow lich goto\"\nlctrl+decimal \"petcom_pow lich dismiss\""}]}]}
