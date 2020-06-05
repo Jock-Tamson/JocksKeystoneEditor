@@ -5,7 +5,7 @@ from tkinter.colorchooser import askcolor
 
 from Keystone.Model.SlashCommand import IsLoadFileCommand, REPEAT_STR, SlashCommand, TOGGLE_STR
 from Keystone.Reference.CommandReference import LIST_OF_SLASH_COMMANDS
-from Keystone.Utility.KeystoneUtils import (AverageRGBValues, GetFileName,
+from Keystone.Utility.KeystoneUtils import (AverageRGBValues, CompareKeybindStrings, GetFileName,
                                             RemoveOuterQuotes)
 from Keystone.Widget.ColorPicker import ColorPicker
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
@@ -31,7 +31,7 @@ class SlashCommandEditor(KeystoneEditFrame):
 
 
     def SelectCommand(self, *args):
-        command = [c for c in LIST_OF_SLASH_COMMANDS if (c[0] == self.CommandName.get())]
+        command = [c for c in LIST_OF_SLASH_COMMANDS if (CompareKeybindStrings(c[0] ,self.CommandName.get()))]
         if (len(command) > 0):
             if (self.TextPrompt != command[0][1]):
                 #reset text if prompt is different

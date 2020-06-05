@@ -1,10 +1,10 @@
 import os
 
 from Keystone.Reference.ColorDictionary import STANDARD_COLOR_DICTIONARY
-from Keystone.Utility.KeystoneUtils import (ParseBracketedCodes,
+from Keystone.Utility.KeystoneUtils import (CompareKeybindStrings, ParseBracketedCodes,
                                             RemoveOuterQuotes)
 
-LOAD_FILE_COMMANDS = ("bind_load_file","bind_load_file_silent")
+LOAD_FILE_COMMANDS = ("bind_load_file", "bind_load_file_silent")
 
 #constant strings
 TOGGLE_STR = "++"
@@ -169,5 +169,8 @@ class SlashCommand():
         return SlashCommand(repr=self.__repr__())
 
 def IsLoadFileCommand(command)-> bool:
-    return (LOAD_FILE_COMMANDS.__contains__(command))
+    for loadFileCommand in LOAD_FILE_COMMANDS:
+        if (CompareKeybindStrings(loadFileCommand, command)):
+            return True
+    return False
 

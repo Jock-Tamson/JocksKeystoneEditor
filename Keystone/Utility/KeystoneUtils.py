@@ -156,6 +156,15 @@ def NameForMatch(name)->str:
 
     return name
 
+def CompareKeybindStrings(val1, val2):
+
+    match1 = NameForMatch(val1)
+    match2 = NameForMatch(val2)
+    if ((match1 == None) or (match2 == None)):
+        return False
+    else:
+        return (match1 == match2)
+
 def MatchKeyName(compName, nameList)->[str, str, str]:
     matchName = NameForMatch(compName)
     if (matchName == None):

@@ -230,6 +230,8 @@ class TestSlashCommand(unittest.TestCase):
         self.assertEqual(target.IsLoadFileCommand(), True, "Unexpectedly did not set IsLoadFileCommand")
         target = SlashCommand(repr="bind_load_file_silent \".\\TestReferences\\Jock Tamson\\MouseChord2.txt\"")
         self.assertEqual(target.IsLoadFileCommand(), True, "Unexpectedly did not set silent IsLoadFileCommand") 
+        target = SlashCommand(repr="bindloadfile_silent \".\\TestReferences\\Jock Tamson\\MouseChord2.txt\"")
+        self.assertEqual(target.IsLoadFileCommand(), True, "Unexpectedly did not set silent IsLoadFileCommand") 
         self.assertEqual(target.GetTargetFile(), os.path.abspath(".\\TestReferences\\Jock Tamson\\MouseChord2.txt"), "Did not get expected TargetFile")
         target.SetTargetFile(".\\NewPath\\Jock Tamson\\MouseChord2.txt")
         self.assertEqual(target.GetTargetFile(), os.path.abspath(".\\NewPath\\Jock Tamson\\MouseChord2.txt"), "Did not set expected TargetFile")
@@ -572,45 +574,78 @@ class TestBindFileCollection(unittest.TestCase):
     def test_RepointBindFileCollection(self):
 
         def _compare():
-            idx = 0
-            for bind in target.File.GetLoadFileBinds():
-                for command in bind.GetLoadFileCommands():
-                    actual = command.GetTargetFile()
-                    self.assertEqual(actual, expected[idx], "Did not find expected path for idx " + str(idx))
-                    idx = idx + 1
-            for bindFile in target.GetBoundFiles():
+            for idx, entry in enumerate(expected):
+                filePath = entry[0]
+                boundFilePaths = entry[1]
+                if (idx == 0):
+                    self.assertEqual(target.FilePath, filePath)
+                    bindFile = target.File
+                    rootBoundFiles = target.GetBoundFiles()
+                else:
+                    bindFile = rootBoundFiles[idx - 1]
+                self.assertEqual(bindFile.FilePath, filePath)
+                actualBoundFilePaths = []
                 for bind in bindFile.GetLoadFileBinds():
                     for command in bind.GetLoadFileCommands():
-                        actual = command.GetTargetFile()
-                        self.assertEqual(actual, expected[idx], "Did not find expected path for idx " + str(idx))
-                        idx = idx + 1
+                        actualBoundFilePaths.append(command.GetTargetFile())
+                for boundFileIndex, boundFilePath in enumerate(boundFilePaths):
+                    self.assertEqual(actualBoundFilePaths[boundFileIndex], boundFilePath, "Did not find expected path for idx " + str(idx))
 
         target = BindFileCollection()
         target.Load(".\\TestReferences\\Field Test\\keybinds.txt")
         target.RepointFilePaths(".\\NewPath\\Field Test\\keybinds.txt")
-        expected =  [os.path.abspath(p) for p in [
+        expected = [
+            (os.path.abspath(".\\NewPath\\Field Test\\keybinds.txt" ) , [os.path.abspath(p) for p in [
             "./NewPath/Field Test/I1.txt", 
             "./NewPath/Field Test/MBUTTON1.txt", 
             "./NewPath/Field Test/keybinds.txt", 
-            "./TestReferences/keybinds(1).txt",
-            "./NewPath/Field Test/I2.txt",
-            "./NewPath/Field Test/I1.txt", 
-            "./NewPath/Field Test/MBUTTON2.txt", 
-            "./NewPath/Field Test/MBUTTON1.txt"]]
+            "./TestReferences/keybinds(1).txt"]]),
+            (os.path.abspath(".\\NewPath\\Field Test\\I1.txt" ) , [os.path.abspath(p) for p in [
+            "./NewPath/Field Test/I2.txt"]]),
+            (os.path.abspath(".\\NewPath\\Field Test\\I2.txt" ) , [os.path.abspath(p) for p in [
+            "./NewPath/Field Test/I1.txt"]]),
+            (os.path.abspath(".\\NewPath\\Field Test\\MBUTTON1.txt" ) , [os.path.abspath(p) for p in [
+            "./NewPath/Field Test/MBUTTON2.txt"]]),
+            (os.path.abspath(".\\NewPath\\Field Test\\MBUTTON2.txt" ) , [os.path.abspath(p) for p in [
+            "./NewPath/Field Test/MBUTTON1.txt"]])]
         _compare()
         
         target = BindFileCollection()
         target.Load(".\\TestReferences\\Field Test\\keybinds.txt")
         target.RepointFilePaths(".\\TestReferences\\Field Test\\new_keybinds.txt")
-        expected =  [os.path.abspath(p) for p in [
+        expected = [
+            (os.path.abspath(".\\TestReferences\\Field Test\\new_keybinds.txt" ) , [os.path.abspath(p) for p in [
             "./TestReferences/Field Test/I1(1).txt", 
             "./TestReferences/Field Test/MBUTTON1(1).txt", 
             "./TestReferences/Field Test/new_keybinds.txt", 
-            "./TestReferences/keybinds(1).txt",
-            "./TestReferences/Field Test/I2(1).txt",
-            "./TestReferences/Field Test/I1(1).txt", 
-            "./TestReferences/Field Test/MBUTTON2(1).txt", 
-            "./TestReferences/Field Test/MBUTTON1(1).txt"]]
+            "./TestReferences/keybinds(1).txt"]]),
+            (os.path.abspath(".\\TestReferences\\Field Test\\I1(1).txt" ) , [os.path.abspath(p) for p in [
+            "./TestReferences/Field Test/I2(1).txt"]]),
+            (os.path.abspath(".\\TestReferences\\Field Test\\I2(1).txt" ) , [os.path.abspath(p) for p in [
+            "./TestReferences/Field Test/I1(1).txt"]]),
+            (os.path.abspath(".\\TestReferences\\Field Test\\MBUTTON1(1).txt" ) , [os.path.abspath(p) for p in [
+            "./TestReferences/Field Test/MBUTTON2(1).txt"]]),
+            (os.path.abspath(".\\TestReferences\\Field Test\\MBUTTON2(1).txt" ) , [os.path.abspath(p) for p in [
+            "./TestReferences/Field Test/MBUTTON1(1).txt"]])]
+        _compare()
+        
+        target = BindFileCollection()
+        target.Load(".\\TestReferences\\Field Test\\keybinds.txt")
+        target.RepointFilePaths("C:\\keybinds.txt")
+        expected = [
+            (os.path.abspath("C:\\keybinds.txt" ) , [os.path.abspath(p) for p in [
+            "C:\\I1.txt", 
+            "C:\\MBUTTON1.txt", 
+            "C:\\keybinds.txt", 
+            "./TestReferences/keybinds(1).txt"]]),
+            (os.path.abspath("C:\\I1.txt" ) , [os.path.abspath(p) for p in [
+            "C:\\I2.txt"]]),
+            (os.path.abspath("C:\\I2.txt" ) , [os.path.abspath(p) for p in [
+            "C:\\I1.txt"]]),
+            (os.path.abspath("C:\\MBUTTON1.txt" ) , [os.path.abspath(p) for p in [
+            "C:\\MBUTTON2.txt"]]),
+            (os.path.abspath("C:\\MBUTTON2.txt" ) , [os.path.abspath(p) for p in [
+            "C:\\MBUTTON1.txt"]])]
         _compare()
 
     def test_New(self):
