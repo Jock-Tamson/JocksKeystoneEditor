@@ -139,6 +139,8 @@ class EditBindFile(KeystoneEditFrame):
             self.PathLabel.configure(text=self.FilePath)  
             if (os.path.exists(self.FilePath)):              
                 self.SetClean(self)
+            else:
+                self.SetDirty(self)
         self.OnLinkedFilesFound()
 
     def NewBindCallback(self, result, bind, moving = None):

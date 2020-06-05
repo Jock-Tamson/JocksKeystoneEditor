@@ -99,7 +99,7 @@ class BindFileEditorWindow(tk.Tk):
         editor = self.Notebook.SelectedFrame()
         if (editor == None):
             return
-        editor.Save(True)
+        editor.Save()
 
     def OnFileSaveAs(self):
         collectionEditor = self.Notebook.SelectedFrame()
@@ -108,7 +108,7 @@ class BindFileEditorWindow(tk.Tk):
         editor = self.Notebook.SelectedFrame()
         if (editor == None):
             return
-        editor.Save()
+        editor.Save(True)
 
     def CancelFromSavePrompt(self)->bool:
         collectionEditor = self.Notebook.SelectedFrame()
@@ -255,7 +255,7 @@ class BindFileEditorWindow(tk.Tk):
         importCollection = BindFileCollection()
         importCollection.Deserialize(fileName)
         boundFiles = importCollection.GetBoundFiles()
-        if ((bindFileEditor.FilePath == None) and (len(boundFiles) > 0)):
+        if (((bindFileEditor.FilePath == None) or (bindFileEditor.FilePath == NEW_FILE)) and (len(boundFiles) > 0)):
             response = messagebox.askokcancel('Path Needed For Linked Files',
                 'You must choose a target path for this file to set paths for linked files.\n'+
                 'The paths will be set, but no files will be saved yet.')
@@ -277,6 +277,9 @@ class BindFileEditorWindow(tk.Tk):
         if (pointPath != None):
             bindFileEditor.FilePath = pointPath
             bindFileEditor.PathLabel.configure(text=bindFileEditor.FilePath)
+            collectionEditor.FilePath = bindFileEditor.FilePath 
+            collectionEditor.viewFrame.Directory = os.path.dirname(bindFileEditor.FilePath)
+            collectionEditor.viewFrame.Dictionary[PATH] = bindFileEditor.FilePath
             self.SetTabName(collectionEditor)
 
         try:

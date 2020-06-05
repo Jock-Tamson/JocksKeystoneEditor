@@ -7,7 +7,7 @@ from Keystone.Model.Bind import Bind
 from Keystone.Model.BindFile import BindFile, NewBindFile, ReadBindsFromFile
 from Keystone.Model.Keychain import Keychain, BOUND_FILES, NONE, PATH, REPR
 
-from Keystone.Utility.KeystoneUtils import ComparableFilePath, GetFileName, GetUniqueFilePath, RemoveOuterQuotes, RemoveStartAndEndDirDelimiters
+from Keystone.Utility.KeystoneUtils import ComparableFilePath, GetFileName, GetDirPathFromRoot, GetUniqueFilePath, RemoveOuterQuotes, RemoveStartAndEndDirDelimiters
 
 NEW_FILE = "<New File>"
 ROOT = "root"
@@ -129,17 +129,18 @@ class BindFileCollection():
         if (self.File.FilePath == None):
             return
         currentFilePath = os.path.abspath(self.File.FilePath)
+        currentDirectory = os.path.dirname(currentFilePath)
         newFilePath = os.path.abspath(newFilePath)
         self.FilePath = newFilePath
         if (ComparableFilePath(currentFilePath) == ComparableFilePath(newFilePath)):
             return
-        newDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(newFilePath))
+        newDirectory = os.path.dirname(newFilePath)
 
         self.File.RepointFilePaths(newFilePath, overwrite)
 
         boundFiles = self.GetBoundFiles()
         for boundFile in boundFiles:
-            newFilePath = os.path.join(newDirectory, GetFileName(currentFilePath))
+            newFilePath = os.path.join(newDirectory, GetDirPathFromRoot(currentDirectory, boundFile.FilePath))
             if ((not overwrite) and (os.path.exists(newFilePath))):
                 newFilePath = GetUniqueFilePath(newFilePath)
             boundFile.RepointFilePaths(newFilePath, overwrite)
@@ -202,12 +203,9 @@ class BindFileCollection():
         else:
             self.KeyChains = []
             for entry in keyChains:
-                if serialization:
-                    for boundFile in entry[BOUND_FILES]:
-                        boundFile[PATH] = boundFile[PATH].replace(ROOT, "C:")
                 self.KeyChains.append(Keychain(repr=entry.__repr__()))
 
-    def GetDictionary(self, serialization = False):
+    def GetDictionary(self):
         data = {}
         if self.FilePath == None:
             data[PATH] = NEW_FILE
@@ -224,9 +222,6 @@ class BindFileCollection():
             keyChains = []
             for keyChain in self.KeyChains:
                 chain_dict = keyChain.GetDictionary()
-                if (serialization):
-                    for entry in chain_dict[BOUND_FILES]:
-                        entry[PATH] = entry[PATH].replace("C:", ROOT)
                 keyChains.append(chain_dict)
             data[KEY_CHAINS] = keyChains
         return data

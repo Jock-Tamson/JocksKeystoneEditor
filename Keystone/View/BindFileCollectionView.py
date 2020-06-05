@@ -22,7 +22,7 @@ class BindFileCollectionView(KeystoneFrame):
         
         tags = [FILE_TAG, self.BuildFileTag(-1, -1)]
 
-        if (self.Directory == NEW_FILE):
+        if (self.Dictionary[PATH]== NEW_FILE):
             fileName = NEW_FILE
             directory = ""
             tags.append(EDITED_TAG)
@@ -122,6 +122,11 @@ class BindFileCollectionView(KeystoneFrame):
         else:
             return child[0]
 
+    def SelectRoot(self):
+        children = self.Tree.GetAllChildren() 
+        self.Tree.selection_set(children[0])
+        self.Tree.focus(children[0])
+
     def CommitRepr(self, fileTag):
         editor = self.GetEditor(fileTag)
         bindFile = editor.Get()
@@ -152,12 +157,12 @@ class BindFileCollectionView(KeystoneFrame):
         match = [p for p in self.Dictionary[KEY_CHAINS] if (p[KEY] == UNBOUND)]
         if (len(match) > 0):
             result = match[0]
-        if (result == None):
+            if ((orphans != NONE) and (result != NONE)):
+                for orphan in orphans:
+                    result[BOUND_FILES].append(orphan)
+        if ((result == None) and create):
             result =  {KEY : UNBOUND , CHORD : "", BOUND_FILES : orphans }
             self.Dictionary[KEY_CHAINS].append(result)   
-        elif (orphans != NONE):
-            for orphan in orphans:
-                result[BOUND_FILES].append(orphan)
         return result
 
 
@@ -168,6 +173,7 @@ class BindFileCollectionView(KeystoneFrame):
         collection = self.GetCollection(True)
         collection.KeyChains = GetKeyChains(collection.File, collection.FilePath, collection.GetBoundFiles())
         newDictionary = self.GetDictionary(collection)
+
         if (orphanage != None):
             for orphan in orphanage[BOUND_FILES]:
                 orphans.append(orphan)
@@ -188,8 +194,9 @@ class BindFileCollectionView(KeystoneFrame):
                     orphans.append(oldFile)
         elif (self.Dictionary[KEY_CHAINS] == NONE):
             #chains added
+            self.Dictionary[KEY_CHAINS] = []
             for addedChain in newDictionary[KEY_CHAINS]:
-                addedChains.append(newDictionary[KEY_CHAINS])
+                addedChains.append(addedChain)
         else:
       
             #were chains removed
@@ -344,6 +351,8 @@ class BindFileCollectionView(KeystoneFrame):
                 for boundFile in boundFiles:
                     boundFile[EDITOR] = None
                     boundFile[SELECTED_TAG] = False
+            if (len(keyChains) == 0):
+                keyChains = NONE
 
         return result
 

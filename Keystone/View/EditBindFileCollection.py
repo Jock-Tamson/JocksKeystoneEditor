@@ -18,14 +18,10 @@ class EditBindFileCollection(KeystoneEditFrame):
 
     def SetEditedItem(self, *args):
         editor = args[0]
-        hadChildren = (len(self.viewFrame.Tree.GetAllChildren()) > 0)
         item = self.viewFrame.GetEditedItem(editor)
-        hasChildren = (len(self.viewFrame.Tree.GetAllChildren()) > 0)
-        if (hasChildren and (not hadChildren)):
-            self.Pane.insert(0, self.viewFrame)
-        elif (hadChildren and (not hasChildren)):
-            self.Pane.forget(self.viewFrame)
         self.viewFrame.SetEdited(item, True)
+        hasChildren = ( not (self.viewFrame.Dictionary[KEY_CHAINS] == NONE))
+        self.ShowTree.set(hasChildren)
         if (self.EditedItems == None):
             self.EditedItems = [editor]
         elif (not (editor in self.EditedItems)):
@@ -70,26 +66,34 @@ class EditBindFileCollection(KeystoneEditFrame):
 
         self.editor.grid(row=0, column=0, sticky='nsew')
 
+    def OnShowTree(self, *args):
+        value = self.ShowTree.get()
+        if (value and (self._showingTree != True)):
+            self.Pane.insert(0, self.viewFrame)
+            self._showingTree = True
+        elif ((not value) and (self._showingTree != False)):
+            self.Pane.forget(self.viewFrame)
+            self._showingTree = False
+
     def Reset(self):
         if (self.editor != None):
             self.editor.grid_forget()
         self.EditedItems = None
         self.FilePath = None
         self.viewFrame.Reset()
+        self.ShowTree.set(False)
 
     def Load(self, bindFileCollection):
         self.Reset()
         self.FilePath = bindFileCollection.FilePath
         self.viewFrame.Load(bindFileCollection)
-
-        children = self.viewFrame.Tree.GetAllChildren() 
-        if (len(children) > 1):
-            self.Pane.insert(0, self.viewFrame)
+        self.viewFrame.SelectRoot()
+        hasChildren = ( not (self.viewFrame.Dictionary[KEY_CHAINS] == NONE))
+        self.ShowTree.set(hasChildren)
+        if ((self.FilePath != None) and os.path.exists(self.FilePath)):              
+            self.SetClean(self)
         else:
-            self.Pane.forget(self.viewFrame)
-
-        self.viewFrame.Tree.selection_set(children[0])
-        self.viewFrame.Tree.focus(children[0])
+            self.SetDirty(self)
 
     def Get(self):
         return self.viewFrame.GetCollection()
@@ -100,8 +104,6 @@ class EditBindFileCollection(KeystoneEditFrame):
         bindFile = editor.Get()
         collection = BindFileCollection(None, bindFile)
         self.Load(collection)
-        self.viewFrame.Dictionary[EDITOR] = editor
-        self.SetEditedItem(editor)
 
     def Open(self, fileName = None):
         if (fileName == None):
@@ -171,5 +173,9 @@ class EditBindFileCollection(KeystoneEditFrame):
         self.editFrame.columnconfigure(0, weight=1)
         self.editFrame.rowconfigure(0, weight=1)
         self.Pane.add(self.editFrame)
+
+        self._showingTree = None
+        self.ShowTree = tk.BooleanVar(value=False)
+        self.ShowTree.trace("w", self.OnShowTree)
 
         self.Reset()

@@ -5,7 +5,7 @@ from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.DefaultKeyBindings import (DEFAULT_BIND,
                                                    DEFAULT_COMMAND,
                                                    DEFAULT_KEY_BINDINGS)
-from Keystone.Utility.KeystoneUtils import (ComparableFilePath, GetFileName, GetUniqueFilePath,
+from Keystone.Utility.KeystoneUtils import (ComparableFilePath, GetFileName, GetDirPathFromRoot, GetUniqueFilePath,
                                             MatchKeyName, RemoveStartAndEndDirDelimiters)
 
 
@@ -77,15 +77,15 @@ class BindFile():
         if ((not overwrite) and (os.path.exists(newFilePath))):
             newFilePath = GetUniqueFilePath(newFilePath)
         self.FilePath = newFilePath
-        currentDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(currentFilePath))
-        newDirectory = RemoveStartAndEndDirDelimiters(os.path.dirname(newFilePath))
+        currentDirectory = os.path.dirname(currentFilePath)
+        newDirectory = os.path.dirname(newFilePath)
         for bind in self.GetLoadFileBinds():
             for command in bind.GetLoadFileCommands():
                 currentTargetPath = command.GetTargetFile()
                 if (ComparableFilePath(currentTargetPath) == ComparableFilePath(currentFilePath)):
                     command.SetTargetFile(newFilePath)
                 else:
-                    newTargetPath = currentTargetPath.replace(currentDirectory, newDirectory)
+                    newTargetPath = os.path.join(newDirectory, GetDirPathFromRoot(currentDirectory, currentTargetPath))
                     if ((not overwrite) and (os.path.exists(newTargetPath))):
                         newTargetPath = GetUniqueFilePath(newTargetPath)
                     command.SetTargetFile(newTargetPath)
