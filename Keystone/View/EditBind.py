@@ -6,7 +6,7 @@ from Keystone.Model.BindFile import GetDefaultBindForKey
 from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.DefaultKeyBindings import DEFAULT_BIND, DEFAULT_COMMAND
 from Keystone.Reference.KeyNames import CHORD_KEYS, KEY_NAMES
-from Keystone.Utility.KeystoneUtils import FormatKeyWithChord, GetResourcePath
+from Keystone.Utility.KeystoneUtils import MatchKeyName, FormatKeyWithChord, GetResourcePath
 from Keystone.View.EditSlashCommand import SlashCommandEditor
 from Keystone.Widget.FrameListView import FrameListView
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
@@ -35,10 +35,10 @@ class BindEditor(KeystoneEditFrame):
 
     def SetKeyDescription(self, keyVar: tk.StringVar, descVar: tk.StringVar, list):
         keyName = keyVar.get()
-        key = [c for c in list if ((c[0] == keyName) or ((c[1] != '') and (c[1] == keyName)))]
-        if (len(key) > 0):
-            desc = key[0][2]
-            altname = key[0][1]
+        key = MatchKeyName(keyName, list)
+        if (key != None):
+            desc = key[2]
+            altname = key[1]
             if ((desc=='')and(altname != '')):
                 desc = altname
             descVar.set(desc)
