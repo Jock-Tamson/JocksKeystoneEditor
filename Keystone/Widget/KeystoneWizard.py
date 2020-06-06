@@ -146,7 +146,8 @@ class KeystoneWizard(tk.Toplevel):
             index = 0
         if (index != self.PageIndex.get()):
             self.PageIndex.set(index)
-            callback(self)
+            if (callback != None):
+                callback(self)
 
     def OnBack(self, *args):
         page = self.CurrentPage

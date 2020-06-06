@@ -52,26 +52,17 @@ def _onCloseWalkthroughWindow(wizard, *args):
     global WalkthroughWindow
     WalkthroughWindow = None
 
-def ShowIntroWalkthrough(parent, image=None):
+def ShowWalkthrough(parent, image=None, title='Keystone Walkthrough', walkthrough=WALKTHROUGH, endPages=WALKTHROUGH_END_PAGES):
 
     global WalkthroughWindow
     global LeadBrickImage
     LeadBrickImage = image
     if (WalkthroughWindow == None):
-        WalkthroughWindow = KeystoneWizard(parent, title='Keystone Walkthrough', onClose = _onCloseWalkthroughWindow)
+        WalkthroughWindow = KeystoneWizard(parent, title=title, onClose = _onCloseWalkthroughWindow)
         pages= []
-        for eachLine in WALKTHROUGH:
+        for eachLine in walkthrough:
             pages.append(KeystoneWalkthroughPages(WalkthroughWindow, text=eachLine))
-        for text, urls in WALKTHROUGH_END_PAGES:
+        for text, urls in endPages:
             pages.append(KeystoneWalkthroughPages(WalkthroughWindow, text=text, urls=urls))
 
         WalkthroughWindow.LoadPages(pages)
-
-
-if (__name__ == "__main__"):
-
-    win = tk.Tk()
-
-    ShowIntroWalkthrough(win)
-
-    tk.mainloop()

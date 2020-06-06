@@ -8,6 +8,8 @@ from Keystone.Model.BindFileCollection import BindFileCollection, NEW_FILE
 from Keystone.Model.Keychain import BOUND_FILES, PATH, REPR
 from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.DefaultKeyBindings import LOAD_COMMAND, SAVE_COMMAND
+from Keystone.Reference.ImportExportWalkthrough import IMPORT_EXPORT_WALKTHROUGH
+from Keystone.Reference.CollectionsAndKeyChainsWalkthrough import COLLECTIONS_AND_KEYCHAINS_WALKTHROUGH, COLLECTIONS_AND_KEYCHAINS_WALKTHROUGH_END_PAGES
 from Keystone.Utility.KeystoneUtils import (ComparableFilePath, GetFileName, GetResourcePath,
                                             SetOpenLinkedFileCallback)
 from Keystone.View.EditBindFileCollection import EditBindFileCollection
@@ -17,7 +19,7 @@ from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
 from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame
 from Keystone.Widget.KeystoneTree import SELECTED_TAG
 from Keystone.Windows.KeystoneAbout import ShowHelpAbout
-from Keystone.Windows.KeystoneWalkthroughPages import ShowIntroWalkthrough
+from Keystone.Windows.KeystoneWalkthroughPages import ShowWalkthrough
 from Keystone.Windows.SelectKeybindImportWindow import ShowSelectKeybindImportWindow
 
 class BindFileEditorWindow(tk.Tk):
@@ -329,17 +331,22 @@ class BindFileEditorWindow(tk.Tk):
         cohMenu = tk.Menu(menu, tearoff = 0)
         cohMenu.add_command(label="Download File", command=self.OnDownloadFile)
         cohMenu.add_command(label="Upload File", command=self.OnUploadFile)
-        cohMenu.add_command(label="Add Upload Bind", command=self.OnAddUploadBind)
         menu.add_cascade(label="Game Commands", menu=cohMenu)
 
         importExportMenu = tk.Menu(menu, tearoff = 0)
         importExportMenu.add_command(label="Import Binds", command=self.OnImportBinds)
         importExportMenu.add_command(label="Export Binds", command=self.OnExportBinds)
-        importExportMenu.add_command(label="Predefined Binds...", command=lambda parent = win, callback = self.OnPredefinedBindsCallback : ShowSelectKeybindImportWindow(parent, importCallback = callback))
+        importExportMenu.add_command(label="Add Upload Bind", command=self.OnAddUploadBind)
+        importExportMenu.add_command(label="Predefined Binds...", 
+            command=lambda parent = win, callback = self.OnPredefinedBindsCallback : ShowSelectKeybindImportWindow(parent, importCallback = callback))
         menu.add_cascade(label="Import\\Export", menu=importExportMenu)
 
         helpMenu = tk.Menu(menu, tearoff = 0)
-        helpMenu.add_command(label='Getting Started', command=lambda parent=win: ShowIntroWalkthrough(parent))
+        helpMenu.add_command(label='Getting Started', command=lambda parent=win: ShowWalkthrough(parent))
+        helpMenu.add_command(label='Import and Export', command=lambda parent=win: ShowWalkthrough(parent, 
+            title="Import and Export Walkthrough", walkthrough=IMPORT_EXPORT_WALKTHROUGH))
+        helpMenu.add_command(label='Collections and Loaded Files', command=lambda parent=win: ShowWalkthrough(parent, 
+            title="Collections and Loaded Files Walkthrough", walkthrough=COLLECTIONS_AND_KEYCHAINS_WALKTHROUGH, endPages=COLLECTIONS_AND_KEYCHAINS_WALKTHROUGH_END_PAGES))
         self.AddCommand(menu=helpMenu, frame=speedBar, label="About", command = lambda parent=win: ShowHelpAbout(parent))
         menu.add_cascade(label='Help', menu=helpMenu)
 
@@ -348,7 +355,7 @@ class BindFileEditorWindow(tk.Tk):
         self.FirstFrame = KeystoneFrame(win)
         self.FirstFrame.columnconfigure(0, weight=1, minsize = 800)
         self.FirstFrame.rowconfigure(0, weight=1, minsize = 400)
-        walkthroughButton = KeystoneButton(self.FirstFrame, text='Intro Walkthrough', command = lambda parent=win: ShowIntroWalkthrough(parent))
+        walkthroughButton = KeystoneButton(self.FirstFrame, text='Intro Walkthrough', command = lambda parent=win: ShowWalkthrough(parent))
         walkthroughButton.Color('lightskyblue', 'black')
         walkthroughButton.configure(relief = tk.RAISED)
         walkthroughButton.grid()

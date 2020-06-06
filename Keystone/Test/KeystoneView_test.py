@@ -11,25 +11,39 @@ from Keystone.Model.Bind import Bind
 from Keystone.Model.BindFile import ReadBindsFromFile
 from Keystone.Model.BindFileCollection import BindFileCollection
 from Keystone.Model.Keychain import Keychain
+from Keystone.Reference.ImportExportWalkthrough import IMPORT_EXPORT_WALKTHROUGH
+from Keystone.Reference.CollectionsAndKeyChainsWalkthrough import COLLECTIONS_AND_KEYCHAINS_WALKTHROUGH, COLLECTIONS_AND_KEYCHAINS_WALKTHROUGH_END_PAGES
 from Keystone.View.EditSlashCommand import SlashCommandEditor
 from Keystone.View.EditBind import EditBindWindow
 from Keystone.View.EditBindFile import EditBindFile
 from Keystone.View.BindFileCollectionView import BindFileCollectionView
 from Keystone.View.EditBindFileCollection import EditBindFileCollection
-from Keystone.Windows.KeystoneWalkthroughPages import ShowIntroWalkthrough
+from Keystone.Windows.KeystoneWalkthroughPages import ShowWalkthrough
 from Keystone.Windows.BindFileEditorWindow import BindFileEditorWindow
 from Keystone.Windows.KeystoneAbout import ShowHelpAbout
 from Keystone.Windows.SelectKeybindImportWindow import ShowSelectKeybindImportWindow
 from Keystone.Utility.KeystoneUtils import GetResourcePath
 
-SET_TO_SHOW_WINDOWS = True
+SET_TO_SHOW_WINDOWS = False
 
 class TestKeystoneWalthroughPages(unittest.TestCase):
 
     def test_ShowIntroWalkthrough(self):
         if SET_TO_SHOW_WINDOWS:
             win = tk.Tk()
-            ShowIntroWalkthrough(win)
+            ShowWalkthrough(win)
+            tk.mainloop()
+
+    def test_ShowImportWalkthrough(self):
+        if SET_TO_SHOW_WINDOWS:
+            win = tk.Tk()
+            ShowWalkthrough(win, walkthrough=IMPORT_EXPORT_WALKTHROUGH)
+            tk.mainloop()
+
+    def test_ShowCollectionWalkthrough(self):
+        if SET_TO_SHOW_WINDOWS:
+            win = tk.Tk()
+            ShowWalkthrough(win, walkthrough=COLLECTIONS_AND_KEYCHAINS_WALKTHROUGH, endPages=COLLECTIONS_AND_KEYCHAINS_WALKTHROUGH_END_PAGES)
             tk.mainloop()
 
 class TestEditSlashCommand(unittest.TestCase):
