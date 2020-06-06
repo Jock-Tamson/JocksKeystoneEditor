@@ -81,7 +81,7 @@ class TestKeystoneUtils(unittest.TestCase):
 
         #match key
         target = ';'
-        expected = [';','SEMICOLON','']
+        expected = (';','SEMICOLON','')
         actual = MatchKeyName(target, KEY_NAMES)
         self.assertEqual(actual, expected, 'Failed to match ;')
 
