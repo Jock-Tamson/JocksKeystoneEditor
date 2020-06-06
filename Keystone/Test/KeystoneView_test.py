@@ -19,6 +19,7 @@ from Keystone.View.EditBindFileCollection import EditBindFileCollection
 from Keystone.Windows.KeystoneWalkthroughPages import ShowIntroWalkthrough
 from Keystone.Windows.BindFileEditorWindow import BindFileEditorWindow
 from Keystone.Windows.KeystoneAbout import ShowHelpAbout
+from Keystone.Windows.SelectKeybindImportWindow import ShowSelectKeybindImportWindow
 from Keystone.Utility.KeystoneUtils import GetResourcePath
 
 SET_TO_SHOW_WINDOWS = True
@@ -163,6 +164,19 @@ class TestKeystoneAbout(unittest.TestCase):
         if SET_TO_SHOW_WINDOWS:
             win = tk.Tk()
             ShowHelpAbout(win)
+
+            tk.mainloop()
+
+class TestSelectKeybindImportWindow(unittest.TestCase):
+
+    def test_ShowSelectKeybindImportWindow(self):
+        if SET_TO_SHOW_WINDOWS:
+            win = tk.Tk()
+
+            def callback(selector, filePath):
+                print(filePath)
+
+            ShowSelectKeybindImportWindow(win, importCallback=callback)
 
             tk.mainloop()
 

@@ -18,6 +18,7 @@ from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame
 from Keystone.Widget.KeystoneTree import SELECTED_TAG
 from Keystone.Windows.KeystoneAbout import ShowHelpAbout
 from Keystone.Windows.KeystoneWalkthroughPages import ShowIntroWalkthrough
+from Keystone.Windows.SelectKeybindImportWindow import ShowSelectKeybindImportWindow
 
 class BindFileEditorWindow(tk.Tk):
 
@@ -252,48 +253,8 @@ class BindFileEditorWindow(tk.Tk):
         if (fileName == ''):
             return
 
-        importCollection = BindFileCollection()
-        importCollection.Deserialize(fileName)
-        boundFiles = importCollection.GetBoundFiles()
-        if (((bindFileEditor.FilePath == None) or (bindFileEditor.FilePath == NEW_FILE)) and (len(boundFiles) > 0)):
-            response = messagebox.askokcancel('Path Needed For Linked Files',
-                'You must choose a target path for this file to set paths for linked files.\n'+
-                'The paths will be set, but no files will be saved yet.')
-            if (not response):
-                return
-            options = {}
-            options['initialfile'] = "keybinds.txt"
-            options['title'] = "Select Target Destination for Linked Files"
-            options['filetypes'] = (("Keybind Files", "*.txt"), ("All Files", "*.*"))
-            options['defaultextension'] = "txt"
-            pointPath = filedialog.asksaveasfilename(**options)
-            if (pointPath == ''):
-                return False          
-            BindFileCollection.FilePath = pointPath
-        else:
-            pointPath = bindFileEditor.FilePath
-
-        importCollection.RepointFilePaths(pointPath)
-        if (pointPath != None):
-            bindFileEditor.FilePath = pointPath
-            bindFileEditor.PathLabel.configure(text=bindFileEditor.FilePath)
-            collectionEditor.FilePath = bindFileEditor.FilePath 
-            collectionEditor.viewFrame.Directory = os.path.dirname(bindFileEditor.FilePath)
-            collectionEditor.viewFrame.Dictionary[PATH] = bindFileEditor.FilePath
-            self.SetTabName(collectionEditor)
-
-        try:
-            self.SuppressCallback = True
-            boundFiles = importCollection.GetBoundFiles()
-            if (len(boundFiles) > 0):
-                #put them in the orphange so refresh can find them
-                orphans = [{PATH : boundFile.FilePath, REPR : boundFile.__repr__(), EDITOR : None, SELECTED_TAG : False} for boundFile in boundFiles]
-                collectionEditor.viewFrame.GetOrphanage(True, orphans)
-        finally:
-            self.SuppressCallback = False
-
-        for bind in importCollection.File.Binds:
-            bindFileEditor.NewBindCallback(True, bind)
+        collectionEditor.ImportBinds(fileName)
+        self.SetTabName(collectionEditor)
 
     def OnExportBinds(self):
         collectionEditor = self.Notebook.SelectedFrame()
@@ -306,6 +267,19 @@ class BindFileEditorWindow(tk.Tk):
             return
         editor.OnSelectCallback = self._onSelectCallback
         editor.SetSelectMode(not editor.SelectMode)
+
+    def OnPredefinedBindsCallback(self, importWindow, filePath):
+        collectionEditor = self.Notebook.SelectedFrame()
+        if (collectionEditor == None):
+            return
+        bindFileEditor = self.Notebook.SelectedFrame().editor
+        if (bindFileEditor == None):
+            return
+        if (self.CancelFromSavePrompt()):
+            return
+
+        collectionEditor.ImportBinds(filePath)
+        self.SetTabName(collectionEditor)
 
     def AddCommand(self, menu: tk.Menu, frame, label, command):
         menu.add_command(label=label, command=command)
@@ -355,6 +329,7 @@ class BindFileEditorWindow(tk.Tk):
         importExportMenu = tk.Menu(menu, tearoff = 0)
         importExportMenu.add_command(label="Import Binds", command=self.OnImportBinds)
         importExportMenu.add_command(label="Export Binds", command=self.OnExportBinds)
+        importExportMenu.add_command(label="Predefined Binds...", command=lambda parent = win, callback = self.OnPredefinedBindsCallback : ShowSelectKeybindImportWindow(parent, importCallback = callback))
         menu.add_cascade(label="Import\\Export", menu=importExportMenu)
 
         helpMenu = tk.Menu(menu, tearoff = 0)

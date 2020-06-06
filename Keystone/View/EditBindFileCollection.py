@@ -1,11 +1,11 @@
 import os as os
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import filedialog, messagebox, ttk
 
 from Keystone.Model.BindFile import BindFile, NewBindFile, ReadBindsFromFile
 from Keystone.Model.BindFileCollection import NEW_FILE, KEY_CHAINS, ROOT, BindFileCollection
 from Keystone.Model.Keychain import BOUND_FILES, Keychain, NONE, KEY, CHORD, PATH, REPR
-from Keystone.View.BindFileCollectionView import EDITOR, BindFileCollectionView
+from Keystone.View.BindFileCollectionView import EDITOR, BindFileCollectionView, SELECTED_TAG
 from Keystone.View.EditBindFile import EditBindFile
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
 from Keystone.Widget.KeystoneFormats import KeystoneFrame, KeystonePanedWindow
@@ -151,6 +151,48 @@ class EditBindFileCollection(KeystoneEditFrame):
 
         if (self.SaveCallback != None):
             self.SaveCallback(self)
+
+    def ImportBinds(self, filePath):
+
+        if (self.editor == None):
+            return
+        importCollection = BindFileCollection()
+        importCollection.Deserialize(filePath)
+        boundFiles = importCollection.GetBoundFiles()
+        if (((self.editor.FilePath == None) or (self.editor.FilePath == NEW_FILE)) and (len(boundFiles) > 0)):
+            response = messagebox.askokcancel('Path Needed For Linked Files',
+                'You must choose a target path for this file to set paths for linked files.\n'+
+                'The paths will be set, but no files will be saved yet.')
+            if (not response):
+                return
+            options = {}
+            options['initialfile'] = "keybinds.txt"
+            options['title'] = "Select Target Destination for Linked Files"
+            options['filetypes'] = (("Keybind Files", "*.txt"), ("All Files", "*.*"))
+            options['defaultextension'] = "txt"
+            pointPath = filedialog.asksaveasfilename(**options)
+            if (pointPath == ''):
+                return False          
+            self.FilePath = pointPath
+        else:
+            pointPath = self.editor.FilePath
+
+        importCollection.RepointFilePaths(pointPath)
+        if (pointPath != None):
+            self.editor.FilePath = pointPath
+            self.editor.PathLabel.configure(text=self.editor.FilePath)
+            self.FilePath = self.editor.FilePath 
+            self.viewFrame.Directory = os.path.dirname(self.editor.FilePath)
+            self.viewFrame.Dictionary[PATH] = self.editor.FilePath
+
+        boundFiles = importCollection.GetBoundFiles()
+        if (len(boundFiles) > 0):
+            #put them in the orphange so refresh can find them
+            orphans = [{PATH : boundFile.FilePath, REPR : boundFile.__repr__(), EDITOR : None, SELECTED_TAG : False} for boundFile in boundFiles]
+            self.viewFrame.GetOrphanage(True, orphans)
+
+        for bind in importCollection.File.Binds:
+            self.editor.NewBindCallback(True, bind)
 
     def __init__(self, parent, saveCallback = None):
 
