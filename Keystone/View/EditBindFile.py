@@ -226,8 +226,11 @@ class EditBindFile(KeystoneEditFrame):
             filePath = self.PromptForFilePath()
             if (filePath == ''):
                 return   
+        else:
+            filePath = self.FilePath
 
-        self.DoWork(target=self._write, args=(filePath, ))
+        model = self.Get()
+        self.DoWork(target=self._write, args=(model, filePath, ))
         self.FilePath = filePath   
         self.SetClean(self)
         if (self.OnSaveCallback != None):
@@ -239,8 +242,7 @@ class EditBindFile(KeystoneEditFrame):
     def _read(self, filePath):
         self._readFile = ReadBindsFromFile(filePath)
 
-    def _write(self, filePath):
-        model = self.Get()
+    def _write(self, model, filePath):
         model.WriteBindsToFile(filePath)
 
     def OnLinkedFilesFound(self, binds = None, *args):
