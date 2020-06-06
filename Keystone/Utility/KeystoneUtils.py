@@ -118,7 +118,7 @@ def TriggerOpenLinkedFileCallback(path, bind, source):
         t.start()
 
 global NO_MEIPASS
-NO_MEIPASS = True
+NO_MEIPASS = False
 #https://shanetully.com/2013/08/cross-platform-deployment-of-python-applications-with-pyinstaller/
 def GetResourcePath(relativePath)->str:
     basePath = ''
