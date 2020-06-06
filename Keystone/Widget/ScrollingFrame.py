@@ -52,8 +52,12 @@ class ScrollingFrame(ttk.Frame):
         self.canv.bind_all("<Configure>", self._configure_window) 
         self.bind('<Enter>', self._bound_to_mousewheel)
         self.bind('<Leave>', self._unbound_to_mousewheel)
+        self.bind('<Destroy>', self._onClose)
 
         return
+
+    def _onClose(self, *args):
+        self.canv.unbind_all("<Configure>")
 
     def _bound_to_mousewheel(self, event):
         self.canv.bind_all("<MouseWheel>", self._on_mousewheel)   
@@ -76,6 +80,7 @@ class ScrollingFrame(ttk.Frame):
                 self.showx = True 
         elif (self.showx):
             self.xscrlbr.grid_forget()
+            self.canv.xview_moveto(0) 
             self.showx = False
 
         if (required_size[1] > actual_size[1]):
@@ -84,6 +89,7 @@ class ScrollingFrame(ttk.Frame):
                 self.showy = True 
         elif (self.showy):
             self.yscrlbr.grid_forget()
+            self.canv.yview_moveto(0)
             self.showy = False
 
         if (self.showx or self.showy):

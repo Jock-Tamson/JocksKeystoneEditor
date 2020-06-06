@@ -5,8 +5,8 @@ from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.DefaultKeyBindings import (DEFAULT_BIND,
                                                    DEFAULT_COMMAND,
                                                    DEFAULT_KEY_BINDINGS)
-from Keystone.Utility.KeystoneUtils import (GetFileName, GetUniqueFilePath,
-                                            MatchKeyName)
+from Keystone.Utility.KeystoneUtils import (ComparableFilePath, GetFileName, GetDirPathFromRoot, GetUniqueFilePath,
+                                            MatchKeyName, RemoveStartAndEndDirDelimiters)
 
 
 #object for a set of keybinds to save or load from a file
@@ -38,6 +38,9 @@ class BindFile():
             return ''
         return self.LINE_SEPARATOR.join([str(b) for b in self.Binds])
 
+    def Clone(self):
+        return BindFile(filePath=self.FilePath, repr=self.__repr__())
+
     #Overwrite or create a file from the binds in the object
     def WriteBindsToFile(self, filePath: str = None):
         if (filePath == None):
@@ -59,10 +62,17 @@ class BindFile():
             return []
         return [b for b in self.Binds if b.IsLoadFileBind()]
 
+    def GetLoadedFilePaths(self):
+        result = []
+        for bind in self.GetLoadFileBinds():
+            for path in bind.GetLoadedFilePaths():
+                result.append(path)
+        return result
+
     def RepointFilePaths(self, newFilePath: str, overwrite: bool = False):
         currentFilePath = os.path.abspath(self.FilePath)
         newFilePath = os.path.abspath(newFilePath)
-        if (currentFilePath == newFilePath):
+        if (ComparableFilePath(currentFilePath) == ComparableFilePath(newFilePath)):
             return #No change, exit
         if ((not overwrite) and (os.path.exists(newFilePath))):
             newFilePath = GetUniqueFilePath(newFilePath)
@@ -72,10 +82,10 @@ class BindFile():
         for bind in self.GetLoadFileBinds():
             for command in bind.GetLoadFileCommands():
                 currentTargetPath = command.GetTargetFile()
-                if (currentTargetPath == currentFilePath):
+                if (ComparableFilePath(currentTargetPath) == ComparableFilePath(currentFilePath)):
                     command.SetTargetFile(newFilePath)
                 else:
-                    newTargetPath = currentTargetPath.replace(currentDirectory, newDirectory)
+                    newTargetPath = os.path.join(newDirectory, GetDirPathFromRoot(currentDirectory, currentTargetPath))
                     if ((not overwrite) and (os.path.exists(newTargetPath))):
                         newTargetPath = GetUniqueFilePath(newTargetPath)
                     command.SetTargetFile(newTargetPath)

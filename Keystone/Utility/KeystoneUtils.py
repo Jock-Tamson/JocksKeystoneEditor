@@ -1,9 +1,11 @@
+import inspect
 import os
 import sys
 import threading
 from tkinter import messagebox
 
 from Keystone.Reference.ColorDictionary import STANDARD_COLOR_DICTIONARY
+from Keystone.Reference.KeyNames import KEY_NAMES, CHORD_KEYS
 
 OpenLinkedFileCallback = None
 
@@ -65,6 +67,9 @@ def GetFileName(filePath: str) -> str:
     directory = directory #Makes warnings happy
     return fileName
 
+def ComparableFilePath(filePath: str) -> str:
+    return os.path.normcase(os.path.realpath(filePath))
+
 def GetUniqueFilePath(filePath: str, seed: int = 1, paranthetical: bool = True, usedNames: list = None) -> str:
     filePath = os.path.abspath(filePath)
     directory, origFileName = os.path.split(filePath)
@@ -81,16 +86,23 @@ def GetUniqueFilePath(filePath: str, seed: int = 1, paranthetical: bool = True, 
         idx = idx + 1
     return filePath
 
+def RemoveStartAndEndDirDelimiters(dirName: str) -> str:
+    result = dirName
+    if (result[0] == '\\'):
+        result = result[1:]
+    if (result[-1] == '\\'):
+        result = result[:-1]
+    return result
+
 #returns path from root path
 def GetDirPathFromRoot(rootPath, fullPath) -> str:
-    rootPath = os.path.abspath(rootPath)
     fullPath = os.path.abspath(fullPath)
-    if (rootPath != fullPath):
-        dirName = fullPath.replace(rootPath, "")
-        if (dirName[0] == '\\'):
-            dirName = dirName[1:]
-        if (dirName[-1] == '\\'):
-            dirName = dirName[:-1]
+    compRootPath = ComparableFilePath(rootPath)
+    compFullPath = ComparableFilePath(fullPath)
+    if (compRootPath != compFullPath):
+        dirName = compFullPath.replace(compRootPath, "")
+        dirName = fullPath[-len(dirName):] #to retain captilization
+        dirName = RemoveStartAndEndDirDelimiters(dirName)
         return dirName
     else:
         return '.'
@@ -99,18 +111,24 @@ def SetOpenLinkedFileCallback(callback):
     global OpenLinkedFileCallback
     OpenLinkedFileCallback = callback
 
-def TriggerOpenLinkedFileCallback(path):
+def TriggerOpenLinkedFileCallback(path, bind, source):
     global OpenLinkedFileCallback
     if (OpenLinkedFileCallback != None):
-        t =  threading.Thread(name='openlinkedfilecallback_'+ path, target=OpenLinkedFileCallback, args=(path, )) 
+        t =  threading.Thread(name='openlinkedfilecallback_'+ path, target=OpenLinkedFileCallback, args=(path, bind, source)) 
         t.start()
 
+global NO_MEIPASS
+NO_MEIPASS = False
 #https://shanetully.com/2013/08/cross-platform-deployment-of-python-applications-with-pyinstaller/
 def GetResourcePath(relativePath)->str:
-    try:
-        basePath = sys._MEIPASS
-    except Exception:
-        basePath = ''
+    basePath = ''
+    global NO_MEIPASS
+    if not NO_MEIPASS:
+        try:
+            basePath = sys._MEIPASS
+        except Exception:
+            basePath = ''
+            NO_MEIPASS = True
 
     path = os.path.join(basePath, relativePath)
 
@@ -140,12 +158,66 @@ def NameForMatch(name)->str:
 
     return name
 
+def CompareKeybindStrings(val1, val2):
+
+    match1 = NameForMatch(val1)
+    match2 = NameForMatch(val2)
+    if ((match1 == None) or (match2 == None)):
+        return False
+    else:
+        return (match1 == match2)
+
+
+global QUICK_KEY_NAME_REF
+QUICK_KEY_NAME_REF = {}
 def MatchKeyName(compName, nameList)->[str, str, str]:
+
     matchName = NameForMatch(compName)
+
     if (matchName == None):
         return None
-    matches = [[name, alt_name, desc] for name, alt_name, desc in nameList if ((matchName == NameForMatch(name)) or (matchName == NameForMatch(alt_name)))]
-    if (len(matches) > 0):
-        return matches[0]
+
+    if (nameList == KEY_NAMES):
+        quickKey = "KEY_NAMES:" + matchName
+    elif (nameList == CHORD_KEYS):
+        quickKey = "CHORD_KEYS:" + matchName
     else:
-        return None
+        quickKey = None
+
+    if (quickKey != None):
+        idx = QUICK_KEY_NAME_REF.get(quickKey)
+        if (idx != None):
+            return nameList[idx]
+
+    for idx, entry in enumerate(nameList):
+        name = NameForMatch(entry[0])
+        if (name == matchName):
+            if (quickKey != None):
+                QUICK_KEY_NAME_REF[quickKey] = idx
+            return entry
+        altName = NameForMatch(entry[1])
+        if (altName == matchName):
+            if (quickKey != None):
+                QUICK_KEY_NAME_REF[quickKey] = idx
+            return entry
+
+def FormatKeyWithChord(key, chord): 
+    if (chord == ""):
+        result = key
+    else:
+        result = "%s+%s" % (chord, key)
+    return result
+
+def SetTopmost(widget, value):
+
+    win = widget
+    was = None
+    while (win != None):
+        bases = [b.__name__ for b in inspect.getmro(win.__class__)]
+        if ('Toplevel' in bases):
+            break
+        win = win.master
+    if (win != None):
+        was = win.attributes("-topmost")
+        win.attributes("-topmost",  value)
+    return was

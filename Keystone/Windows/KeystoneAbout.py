@@ -13,6 +13,9 @@ class KeystoneAbout(tk.Toplevel):
     def __init__(self, parent, *args, **kwargs):
 
         tk.Toplevel.__init__(self, parent, *args, **kwargs)
+        self.maxsize(324, 180)
+        self.attributes("-toolwindow", 1)
+        self.attributes("-topmost", 1)
 
         icon = GetResourcePath('.\\Resources\\keystone.ico')
         if (icon != None):

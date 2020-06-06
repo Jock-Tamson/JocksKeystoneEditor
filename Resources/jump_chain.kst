@@ -1,0 +1,4 @@
+
+{"path": "C:\\keybinds.txt", 
+"description": "Bind the middle mouse button to toggle between Combat Jumping and Super Jump\nA demonstration of using bind_load_file to cause the function of a button to cycle through different commands", 
+"root": "MBUTTON \"em crouch$$powexec_name Combat Jumping$$bind_load_file \"C:\\MBUTTON2.txt\"\"", "key_chains": [{"key": "MBUTTON", "chord": "", "bound_files": [{"path": "C:\\MBUTTON2.txt", "repr": "MBUTTON \"em crouch$$powexec_name Super Jump$$bind_load_file \"C:\\MBUTTON1.txt\"\""}, {"path": "C:\\MBUTTON1.txt", "repr": "MBUTTON \"em crouch$$powexec_name Combat Jumping$$bind_load_file \"C:\\MBUTTON2.txt\"\""}]}]}

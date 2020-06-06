@@ -24,6 +24,10 @@ class FrameNotebook(ttk.Notebook):
         name = str(self) + "." + ReverseDictionaryLookup(self.children, item)
         return name
 
+    def SelectTabForItem(self, item):
+        tab = self.GetTabNameFromItem(item)
+        self.select(tab)
+
     def GetTabTextFromItem(self, item):
         tab = self.GetTabNameFromItem(item)
         text = self.tab(tab)['text']
@@ -81,16 +85,23 @@ class FrameNotebook(ttk.Notebook):
     def NewFrame(self, label):
         self.AddFrame(self.DefaultArgs, label)
 
-    def RemoveSelectedFrame(self):
+    def RemoveItem(self, item):
         if self.Items == None:
             return
-        item = self.SelectedFrame()
+        if item == None:
+            return
         self.Items.remove(item)
         if len(self.Items) == 0:
             self.Items = None
         if (not self._areDirtyFrames()):
             self.Dirty = False
-        self.forget(self.select())
+        self.forget(item)
+
+    def RemoveSelectedFrame(self):
+        if self.Items == None:
+            return
+        item = self.SelectedFrame()
+        self.RemoveItem(item)
 
     def SelectedFrame(self): 
         if self.Items == None:

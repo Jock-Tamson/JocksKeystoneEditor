@@ -9,7 +9,7 @@ from Keystone.Model.BindFileCollection import NEW_FILE
 from Keystone.Reference.DefaultKeyBindings import (DEFAULT_BIND,
                                                    DEFAULT_LOAD_BIND)
 from Keystone.Reference.KeyNames import CHORD_KEYS, KEY_NAMES
-from Keystone.Utility.KeystoneUtils import (GetFileName,
+from Keystone.Utility.KeystoneUtils import (FormatKeyWithChord, GetFileName,
                                             TriggerOpenLinkedFileCallback)
 from Keystone.View.EditBind import BindEditor, EditBindWindow
 from Keystone.Widget.FrameListView import FrameListView, FrameListViewItem
@@ -22,25 +22,43 @@ from Keystone.Widget.KeystoneFormats import (BACKGROUND, FOREGROUND, KeystoneBut
 class BindListItem(KeystoneEditFrame):
 
     def EditorCallback(self, result, bind, *args):
-        self.Button.Color(BACKGROUND, FOREGROUND)
+        self.SetEdited()
         self.Editor = None
         if (result):
-            if (bind.GetKeyWithChord(defaultNames=True) != self.Bind.GetKeyWithChord(defaultNames=True)):
+            if (bind.GetKeyWithChord(defaultNames=True) != self.Get().GetKeyWithChord(defaultNames=True)):
                 self.BindFileEditor.NewBindCallback(True, bind, moving = self.master)
             else:
-                self.Bind = bind
+                self.Repr.set(bind.__repr__())
+                if bind.IsLoadFileBind():
+                    self.BindFileEditor.OnLinkedFilesFound(binds=[bind])
                 self.SetDirty()
-                self.Label.configure(text=self.Bind)
         
+    def SetEdited(self, *args):
+        dirty = self.Dirty.get()
+        if dirty:
+            self.Button.Color('yellow', BACKGROUND)
+        else:
+            self.Button.Color(BACKGROUND, FOREGROUND)
             
     def OnEdit(self, *args):
         if self.Editor == None:
             self.Button.Color(FOREGROUND, BACKGROUND)
-            self.Editor = EditBindWindow(self, self.EditorCallback, self.Bind, lockKey=True)
+            self.Editor = EditBindWindow(self, self.EditorCallback, self.Get(), lockKey=True)
         else:
             self.Editor.OnCancel()
 
-    def __init__(self, parent, bind: Bind):
+    def ShowEditButton(self, show = False):
+        if (show and (not self._showingEdit)):
+            self.Button.grid(row=0, column=0, sticky="nsew")
+            self._showingEdit = True
+        elif ((not show) and self._showingEdit):
+            self.Button.grid_forget()
+            self._showingEdit = False
+
+    def Get(self):
+        return Bind(repr=self.Repr.get())
+
+    def __init__(self, parent, bind: Bind, dirty = False):
         KeystoneEditFrame.__init__(self, parent) 
 
         self.BindFileEditor = parent
@@ -49,24 +67,32 @@ class BindListItem(KeystoneEditFrame):
             if (self.BindFileEditor == None):
                 break
         self.Editor = None
-        self.Bind = bind
 
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=0)
         self.rowconfigure(1, weight=0)
+        self._showingEdit = True
         self.Button = KeystoneButton(self, text="...",  width=6, command=self.OnEdit)
         self.Button.grid(row=0, column=0, sticky="nsew")  
-        self.Label = KeystoneLabel(self, text=bind)
+        self.Repr = tk.StringVar()
+        self.Label = KeystoneLabel(self, textvariable=self.Repr)
+        self.Repr.set(bind.__repr__())
         self.Label.grid(row=0,column=1, sticky="nsew") 
+
+        self.OnSetDirty.append(self.SetEdited)
+        self.OnSetClean.append(self.SetEdited)
+        self.BindFileEditor.OnSetClean.append(self.SetClean)
+        if (dirty):
+            self.SetDirty()
 
 class EditBindFile(KeystoneEditFrame):
 
     def ShowSaveButtons(self, *args):
-        if (self.Model == None):
+        if (self.LoadedFile == None):
             return
         self.SaveButton.grid(row=0, column=1, sticky='nse')
-        if (self.Model.FilePath != None):
+        if (self.FilePath != None):
             self.CancelButton.grid(row=0, column=2, sticky='nse')
 
     def HideSaveButtons(self, *args):
@@ -74,15 +100,16 @@ class EditBindFile(KeystoneEditFrame):
         self.CancelButton.grid_forget()
 
     def Load(self, bindFile):
+        self.LoadedFile = bindFile.Clone()
         self.Loading = True
         try:
-            if (bindFile.Binds != None):
+            if (self.LoadedFile.Binds != None):
 
                 binds = []
                 if (self.List.get()):
-                    binds = [Bind(repr=bind.__repr__()) for bind in bindFile.Binds]
+                    binds = self.LoadedFile.Binds
                 else:
-                    #check for and load each permutation of known keys and chords
+                    #load in expeded order
                     chords = ['']
                     for chord, altname, desc in CHORD_KEYS:
                         dummy = altname
@@ -92,34 +119,29 @@ class EditBindFile(KeystoneEditFrame):
                         dummy = altname
                         dummy = desc
                         for chord in chords:
-                            keyBinds = bindFile.GetBindForKey(key, chord)
+                            keyBinds = self.LoadedFile.GetBindForKey(key, chord)
                             if (len(keyBinds) > 0):
-                                binds.append(Bind(repr=keyBinds[0].__repr__()))
+                                binds.append( keyBinds[0] )
                     #load anything in the file we didn't match at the end
-                    for bind in bindFile.Binds:
+                    for bind in self.LoadedFile.Binds:
                         loaded = [b for b in binds if (bind.GetKeyWithChord(defaultNames=True) == b.GetKeyWithChord(defaultNames = True))]
                         if (len(loaded) == 0):
-                            binds.append(Bind(repr=bind.__repr__()))
+                            binds.append(bind)
 
                 self.view.Load(BindListItem, binds, Bind(repr=DEFAULT_BIND))
 
-            self.Model = bindFile
-
         finally:
             self.Loading = False
-        self.SetClean(self)
-        if (bindFile.FilePath == None):
+        self.FilePath = self.LoadedFile.FilePath
+        if (self.FilePath == None):
             self.PathLabel.configure(text="")
         else:
-            self.PathLabel.configure(text=bindFile.FilePath)
+            self.PathLabel.configure(text=self.FilePath)  
+            if (os.path.exists(self.FilePath)):              
+                self.SetClean(self)
+            else:
+                self.SetDirty(self)
         self.OnLinkedFilesFound()
-        
-    def _buildKeyWithChord(self, key, chord):        
-        if (chord == ""):
-            result = str.upper(key)
-        else:
-            result = "%s+%s" % (str.upper(chord), str.upper(key))
-        return result
 
     def NewBindCallback(self, result, bind, moving = None):
 
@@ -133,8 +155,9 @@ class EditBindFile(KeystoneEditFrame):
                 self.view.Items = []
 
             #find place in list
-            itemsInList = [ (idx, self._buildKeyWithChord(item.Item.Bind.Key, item.Item.Bind.Chord)) for idx, item in enumerate(self.view.Items) ]
-            newKeyWithChord = self._buildKeyWithChord(newKey, newChord)
+            index = -1
+            itemsInList = [ (idx, str.upper(FormatKeyWithChord(bind.Key, bind.Chord))) for idx, bind in [(idx, item.Item.Get()) for idx, item in enumerate(self.view.Items)] ]
+            newKeyWithChord = str.upper(FormatKeyWithChord(newKey, newChord))
             chords = ['']
             for chord, altname, desc in CHORD_KEYS:
                 dummy = altname
@@ -144,7 +167,7 @@ class EditBindFile(KeystoneEditFrame):
                 dummy = altname
                 dummy = desc
                 for chord in chords:
-                    keyWithChord = self._buildKeyWithChord(key, chord)
+                    keyWithChord = str.upper(FormatKeyWithChord(key, chord))
                     match = [(idx, listedKeyWithChord) for idx, listedKeyWithChord in itemsInList if listedKeyWithChord == keyWithChord]
                     if (len(match) > 0):
                         #this key is in binds
@@ -163,17 +186,17 @@ class EditBindFile(KeystoneEditFrame):
                     break
 
             if (replaceItem != None):
-                response = messagebox.askokcancel("Existing Bind", "Overwrite the existing bind for " + newKeyWithChord)
+                response = messagebox.askokcancel("Existing Bind", "Overwrite the existing bind for %s\n\n%s\n\nwith the new bind\n\n%s?" % (newKeyWithChord, replaceItem.Item.Get(), bind ))
                 if (response):
                     self.view.Remove(replaceItem)
                 else:
                     if (moving == None):
                         title = 'New Bind'
-                        self.Editor = EditBindWindow(self, self.NewBindCallback, bind, title=title)
+                        self.Editor = EditBindWindow(self, self.NewBindCallback, bind, title=title, dirty=True)
                     else:  
-                        title = moving.Item.Bind.GetKeyWithChord()          
+                        title = moving.Item.Get().GetKeyWithChord()          
                         moving.Item.Button.Color(FOREGROUND, BACKGROUND)
-                        moving.Item.Editor = EditBindWindow(moving.Item, moving.Item.EditorCallback, bind, title=title)
+                        moving.Item.Editor = EditBindWindow(moving.Item, moving.Item.EditorCallback, bind, title=title, dirty=True)
                     return
 
             if (moving != None):
@@ -184,50 +207,58 @@ class EditBindFile(KeystoneEditFrame):
                     if (movingIndex < insertIndex):
                         insertIndex = insertIndex - 1
 
-            self.view.Insert(insertIndex, FrameListViewItem(self.view, BindListItem, bind))
+            self.view.Insert(insertIndex, FrameListViewItem(self.view, BindListItem, bind, True))
+            if (bind.IsLoadFileBind()):
+                self.OnLinkedFilesFound(binds=[bind])
 
     def OnNewBind(self, *args):
         if (self.Editor == None):
             self.Editor = EditBindWindow(self, self.NewBindCallback)
 
-    def Get(self) -> BindFile:       
-        if (self.view.Items == None):
-            return []
-        self.Model.Binds = [item.Item.Bind for item in self.view.Items if item.Item.Bind.Commands != None]
-        return self.Model
+    def Get(self) -> BindFile:    
+        binds = None   
+        if (self.view.Items != None):
+            binds = [bind for bind in [item.Item.Get() for item in self.view.Items] if bind.Commands != None]
+        return BindFile(binds=binds, filePath = self.FilePath)
 
     def OnSave(self, *args):
-        if ((self.Model.FilePath == None) or (self.Model.FilePath == '')):
+        if ((self.FilePath == None) or (self.FilePath == '')):
             filePath = self.PromptForFilePath()
             if (filePath == ''):
-                return        
-        self.DoWork(target=self._write)
+                return   
+        else:
+            filePath = self.FilePath
+
+        model = self.Get()
+        self.DoWork(target=self._write, args=(model, filePath, ))
+        self.FilePath = filePath   
         self.SetClean(self)
         if (self.OnSaveCallback != None):
             self.OnSaveCallback(self)
     
     def OnCancel(self, *args):
-        self.Load(self.Model)
+        self.Load(self.LoadedFile)
 
-    def _read(self, fileName):
-        self.Model = ReadBindsFromFile(fileName)
+    def _read(self, filePath):
+        self._readFile = ReadBindsFromFile(filePath)
 
-    def _write(self):
-        self.Get()
-        self.Model.WriteBindsToFile(self.Model.FilePath)
+    def _write(self, model, filePath):
+        model.WriteBindsToFile(filePath)
 
-    def OnLinkedFilesFound(self, *args):
-        for bind in self.Model.GetLoadFileBinds():
+    def OnLinkedFilesFound(self, binds = None, *args):
+        if (binds == None):
+            binds = self.Get().GetLoadFileBinds()
+        for bind in binds:
             for command in bind.GetLoadFileCommands():
                 targetPath = command.GetTargetFile()
-                TriggerOpenLinkedFileCallback(targetPath)
+                TriggerOpenLinkedFileCallback(targetPath, bind, source = self)
         
 
     def Open(self, fileName = None):
         if (fileName == None):
             options = {}
-            if (self.Model != None):
-                filePath = self.Model.FilePath
+            if (self.LoadedFile != None):
+                filePath = self.LoadedFile.FilePath
             else:
                 filePath = None
             if (filePath != None):
@@ -240,7 +271,8 @@ class EditBindFile(KeystoneEditFrame):
             fileName = filedialog.askopenfilename(**options)
         if (fileName != ''):
             self.DoWork(target=self._read, args=(fileName,))
-            self.Load(self.Model)
+            self.Load(self._readFile)
+            self._readFile = None
 
     def New(self, defaults: bool = False):
         file = NewBindFile(defaults)
@@ -248,37 +280,44 @@ class EditBindFile(KeystoneEditFrame):
         self.SetDirty(self)
 
     def PromptForFilePath(self)->str:
-        if (self.Model == None):
-            return ''
+        if (self.LoadedFile == None):
+            return ''        
         options = {}
         options['initialfile'] = "keybinds.txt"
         options['title'] = "Save Keybind File As"
         options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
         options['defaultextension'] = "txt"
         filePath = filedialog.asksaveasfilename(**options)
-        if (filePath != ''):
-            self.Model.FilePath = filePath
-            self.PathLabel.configure(text=self.Model.FilePath)
 
         return filePath
 
     def Save(self, promptForPath: bool = False):
-        if (self.Model == None):
-            return
         if (promptForPath):
             filePath = self.PromptForFilePath()
             if (filePath == ''):
                 return
         self.OnSave()
 
+    def OnOkSelect(self, *args):
+        close = True
+        if (self.OnSelectCallback != None):
+            selected = [b.Get() for b in self.view.GetSelected()]
+            if (len(selected) > 0):
+                close = self.OnSelectCallback(selected)
+        if (close):
+            self.SetSelectMode(False)
+
+    def OnCancelSelect(self, *args):
+        self.SetSelectMode(False)
+
     def AddUploadBind(self, *args):
-        if (self.Model.FilePath == None):
+        if (self.FilePath == None):
             return
-        path = os.path.abspath(self.Model.FilePath)
+        path = os.path.abspath(self.FilePath)
         bind = None
         dirty = False
         #find current biind
-        loadBinds = [item.Item.Bind for item in self.view.Items if item.Item.Bind.IsLoadFileBind()]
+        loadBinds = [bind for bind in [item.Item.Get() for item in self.view.Items] if bind.IsLoadFileBind()]
         for loadBind in loadBinds:
             loadCommands = loadBind.GetLoadFileCommands()
             for command in loadCommands:
@@ -296,18 +335,34 @@ class EditBindFile(KeystoneEditFrame):
         if (self.Editor == None):
             self.Editor = EditBindWindow(self, self.NewBindCallback, bind=bind, dirty = dirty)
 
+    def SetSelectMode(self, set = False):    
+        if (set != self.SelectMode):  
+            self.SelectMode = set 
+            self.view.SelectMode.set(set)
+            if (self.view.Items != None):
+                for item in [item.Item for item in self.view.Items]:
+                    item.ShowEditButton(not set)
+            if (set):
+                self.NewBindButton.grid_forget()
+                self.OkSelectButton.grid(row=0, column=1, sticky='nse')
+                self.CancelSelectButton.grid(row=0, column=2, sticky='nse')
+            else:
+                self.NewBindButton.grid(row=0, column=3, sticky='nse')
+                self.OkSelectButton.grid_forget()
+                self.CancelSelectButton.grid_forget()
 
-    def __init__(self, parent, bindFile: BindFile = None, list = False, showUploadBindButton = False, onSaveCallback = None):
+    def __init__(self, parent, bindFile: BindFile = None, list = False, showUploadBindButton = False, onSaveCallback = None, onSelectCallback = None):
         KeystoneEditFrame.__init__(self, parent) 
 
         self.OnSetDirty.append(self.ShowSaveButtons)
         self.OnSetClean.append(self.HideSaveButtons)
 
-        self.Model = None
-
         self.SaveButton = None
 
         self.CancelButton = None
+
+        self.SelectMode = False
+        self.OnSelectCallback = onSelectCallback
 
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=0)
@@ -317,8 +372,6 @@ class EditBindFile(KeystoneEditFrame):
         self.columnconfigure(5, weight=0)
         self.rowconfigure(0, weight=0)
         self.rowconfigure(1, weight=1)
-
-        self.Model = bindFile
 
         self.PathLabel = KeystoneLabel(self)
         self.PathLabel.grid(row=0, column=0, sticky='nsew')
@@ -332,6 +385,12 @@ class EditBindFile(KeystoneEditFrame):
         self.NewBindButton = KeystoneButton(self, text="New Bind", command=self.OnNewBind)
         self.NewBindButton.Color("yellow", "black")
         self.NewBindButton.grid(row=0, column=3, sticky='nse')
+
+        self.OkSelectButton = KeystoneButton(self, text="Select", command=self.OnOkSelect)
+        self.OkSelectButton.Color("green", "black")
+
+        self.CancelSelectButton = KeystoneButton(self, text="Cancel", command=self.OnCancelSelect)
+        self.CancelSelectButton.Color("red", "black")
 
         if (showUploadBindButton):
             self.UploadBindButton = KeystoneButton(self, text="Add Upload Bind", command=self.AddUploadBind)
@@ -351,6 +410,9 @@ class EditBindFile(KeystoneEditFrame):
         self.Editor = None
 
         self.OnSaveCallback = onSaveCallback
+
+        self.FilePath = None
+        self.LoadedFile = None
 
         if (bindFile != None):
             self.Load(bindFile)

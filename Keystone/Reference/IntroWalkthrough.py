@@ -106,7 +106,8 @@ WALKTHROUGH = [
     "Because of the reform and everything.\n\n" +
     "Go on and add a bind if you want, and then I want to show you a special one next.",
 
-    "Ready?  Go to the Game Command menu again and select Add Upload Bind.\n\n" +
+    "Ready?  Go to the Import/Export menu and select Add Upload Bind.\n"
+    "(We'll come back to this menu in another walkthrough)\n\n" +
     "There's the New Bind editor again, but its preloaded with an upload command.\n" +
     "Add this and we can use SHIFT+NUMPAD0 to reload the file when we edit it.\n" +
     "Or you can change the keys to whatever you want.\n\n" +

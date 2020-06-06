@@ -1,87 +1,72 @@
-import os
+import ast
 
 from Keystone.Model.Bind import Bind
 from Keystone.Model.BindFile import BindFile
-from Keystone.Model.BindFileCollection import BindFileCollection
-from Keystone.Model.Keylink import Keylink
-from Keystone.Model.SlashCommand import LOAD_FILE_COMMANDS, SlashCommand
-from Keystone.Reference.DefaultKeyBindings import DEFAULT_BIND
-from Keystone.Utility.KeystoneUtils import GetFileName, GetUniqueFilePath
 
+KEY = "key"
+CHORD = "chord"
+BOUND_FILES = "bound_files"
+PATH = "path"
+REPR = "repr"
+NONE = "none"
 
 class Keychain():
 
-    def __init__(self, bindFileCollection: BindFileCollection, key: str, chord: str =""):
-        self.Collection = bindFileCollection
-        self.Anchor = Keylink(bindFileCollection.File, key, chord)
-        self.RootPath = os.path.dirname(self.Anchor.FilePath)
-        self.Links = []
-        self.Key = key
-        self.Chord = chord
-        keyChord = Bind(key, chord).GetKeyWithChord()
-        for bindFile in bindFileCollection.KeyChains[keyChord]:
-            self.Links.append(Keylink(bindFile, key, chord))
-
-    def _changeVar(self, val, chord: bool = False):
-
-        if (chord):
-            self.Chord = val
+    def __init__(self, repr: str = "", key: str = "", chord: str = "", boundFiles: [BindFile] = None):
+        if (repr != ""):
+            self.Parse(repr)
         else:
-            self.Key = val
+            self.parserBind = Bind(key=key, chord=chord)
+            self.Key = self.parserBind.GetDefaultedKeyName()
+            self.Chord = self.parserBind.GetDefaultedChordName()
+            self.BoundFiles = boundFiles
 
-        #note old dict key
-        oldKeyChord = self.Anchor.Bind.GetKeyWithChord()
-
-        #set to Anchor
-        if (chord):
-            self.Anchor.ChangeChord(val)
+    def Parse(self, repr: str):
+        keychainDict = ast.literal_eval(repr)
+        self.parserBind = Bind(key=keychainDict[KEY], chord=keychainDict[CHORD])
+        self.Key = self.parserBind.GetDefaultedKeyName()
+        self.Chord = self.parserBind.GetDefaultedChordName()
+        boundFilesRepr = keychainDict[BOUND_FILES]
+        if boundFilesRepr == NONE:
+            boundFiles = None
         else:
-            self.Anchor.ChangeKey(val)
-        
-        #swap in new dict key
-        keyChord = self.Anchor.Bind.GetKeyWithChord()
-        self.Collection.KeyChains[keyChord] = self.Collection.KeyChains[oldKeyChord]
-        del self.Collection.KeyChains[oldKeyChord]
+            boundFiles = []
+            for boundFileEntry in boundFilesRepr:
+                boundFile = BindFile(repr=boundFileEntry[REPR])
+                boundFile.FilePath = boundFileEntry[PATH]
+                boundFiles.append(boundFile)
+        self.BoundFiles = boundFiles
+    
+    def GetKeyWithChord(self):
+        return self.parserBind.GetKeyWithChord(defaultNames=True)
 
-        #set to Links
-        for link in self.Links:
-            if (chord):
-                link.ChangeChord(val)
-            else:
-                link.ChangeKey(val)
+    #Dictionary structure
+    #KEY - Key for bind in root file
+    #CHORD - Chord for bind in root file
+    #BOUND_FILES- Array of dictionaries for bound files
+        #PATH - Path from load command
+        #REPR - repr string of loaded bind file
 
-    def ChangeKey(self, key):
-        self._changeVar(key)
-
-    def ChangeChord(self, chord):
-        self._changeVar(chord, True)
-
-    def Relink(self):
-        self.Anchor.ChangeTargetFilePath(self.Links[0].FilePath)
-        lastIndex = len(self.Links) - 1
-        for idx, link in enumerate(self.Links):
-            if (idx == lastIndex):
-                target_idx = 0
-            else:
-                target_idx = idx + 1
-            link.ChangeTargetFilePath(self.Links[target_idx].FilePath)
-
-    def Newlink(self, filePath) -> Keylink:
-        filePath = os.path.abspath(filePath)
-        #create load command
-        loadCommand = SlashCommand(name=LOAD_FILE_COMMANDS[0], text="\"%s\"" % filePath)
-        loadBind = Bind(self.Key, self.Chord, [loadCommand])
-        #create new bind file
-        bindFile = BindFile(binds=[loadBind], filePath=filePath)
-        return Keylink(bindFile, self.Key, self.Chord)
-
-    def GetNewFileName(self, usedNames = None) -> str:
-        names = [GetFileName(link.FilePath) for link in self.Links]
-        if (usedNames == None):
-            usedNames = names
+    def GetDictionary(self):
+        keychainDict = {}
+        keychainDict[KEY] = self.Key
+        keychainDict[CHORD] = self.Chord
+        if self.BoundFiles == None:
+            keychainDict[BOUND_FILES] = NONE
         else:
-            usedNames = names.append(usedNames)
-        seed = len(self.Links) + 1
-        filePath = os.path.join(self.RootPath, self.Chord + self.Key + "%d" % seed + ".txt")
-        filePath = GetUniqueFilePath(filePath, seed, False, usedNames)
-        return filePath
+            bound_files = []
+            for boundFile in self.BoundFiles:
+                bound_file_dict = {}
+                bound_file_dict[PATH] = boundFile.FilePath
+                bound_file_dict[REPR] = boundFile.__repr__()
+                bound_files.append(bound_file_dict)
+            keychainDict[BOUND_FILES] = bound_files
+        return keychainDict
+
+
+    def __repr__(self)->str:
+        keychainDict = self.GetDictionary()
+        return keychainDict.__repr__()
+
+    def Clone(self):
+        return Keychain(repr=self.__repr__())

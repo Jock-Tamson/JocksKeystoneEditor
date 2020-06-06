@@ -3,11 +3,10 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 from tkinter.colorchooser import askcolor
 
-from Keystone.Model.SlashCommand import IsLoadFileCommand, SlashCommand
+from Keystone.Model.SlashCommand import IsLoadFileCommand, REPEAT_STR, SlashCommand, TOGGLE_STR
 from Keystone.Reference.CommandReference import LIST_OF_SLASH_COMMANDS
-from Keystone.Utility.KeystoneUtils import (AverageRGBValues, GetFileName,
-                                            RemoveOuterQuotes,
-                                            TriggerOpenLinkedFileCallback)
+from Keystone.Utility.KeystoneUtils import (AverageRGBValues, CompareKeybindStrings, GetFileName,
+                                            RemoveOuterQuotes, SetTopmost)
 from Keystone.Widget.ColorPicker import ColorPicker
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
 from Keystone.Widget.KeystoneFormats import (FONT_SIZE, TEXT_FONT,
@@ -32,7 +31,7 @@ class SlashCommandEditor(KeystoneEditFrame):
 
 
     def SelectCommand(self, *args):
-        command = [c for c in LIST_OF_SLASH_COMMANDS if (c[0] == self.CommandName.get())]
+        command = [c for c in LIST_OF_SLASH_COMMANDS if (CompareKeybindStrings(c[0] ,self.CommandName.get()))]
         if (len(command) > 0):
             if (self.TextPrompt != command[0][1]):
                 #reset text if prompt is different
@@ -94,13 +93,12 @@ class SlashCommandEditor(KeystoneEditFrame):
         self.Loading = True
         try:
             self.BrowseButton.grid_forget()
-            self.Model = command
             self.CommandName.set(command.Name)
             self.TextEntry.SetText(command.Text)
             if (command.Repeat):
-                self.RepeatText.set(command.REPEAT_STR)
+                self.RepeatText.set(REPEAT_STR)
             elif (command.Toggle):
-                self.RepeatText.set(command.TOGGLE_STR)
+                self.RepeatText.set(TOGGLE_STR)
             self.ColorEntry.ColorEntryText.set(command.TextColor)
             self.BackgroundEntry.ColorEntryText.set(command.TextBackgroundColor)
             self.BorderEntry.ColorEntryText.set(command.TextBorderColor)
@@ -112,25 +110,26 @@ class SlashCommandEditor(KeystoneEditFrame):
         self.SetClean(self)
 
     def Get(self) -> SlashCommand:
-        self.Model.Name = self.CommandName.get()
-        self.Model.Text = self.TextEntry.GetText()
-        repeat = self.RepeatText.get()
-        if (repeat == self.Model.REPEAT_STR):
-            self.Model.Repeat = True
-            self.Model.Toggle = False
-        elif (repeat == self.Model.TOGGLE_STR):
-            self.Model.Repeat = False
-            self.Model.Toggle = True
-        else:
-            self.Model.Repeat = False
-            self.Model.Toggle = False
-        self.Model.TextColor = self.ColorEntry.ColorEntryText.get()
-        self.Model.TextBackgroundColor = self.BackgroundEntry.ColorEntryText.get()
-        self.Model.TextBorderColor = self.BorderEntry.ColorEntryText.get()
-        self.Model.TextBackgroundTransparency = self.TransparencyEntryText.get()
-        self.Model.TextScale = self.ScaleEntryText.get()
-        self.Model.TextDuration = self.DurationText.get()
-        return self.Model
+        repeatText = self.RepeatText.get()
+        repeat = False
+        toggle = False
+        if (repeatText == REPEAT_STR):
+            repeat = True
+        elif (repeatText == TOGGLE_STR):
+            toggle = True
+        result = SlashCommand(
+            name = self.CommandName.get(),
+            text = self.TextEntry.GetText(),
+            repeat = repeat,
+            toggle = toggle,
+            color = self.ColorEntry.ColorEntryText.get(),
+            background = self.BackgroundEntry.ColorEntryText.get(),
+            border = self.BorderEntry.ColorEntryText.get(),
+            transparency = self.TransparencyEntryText.get(),
+            scale = self.ScaleEntryText.get(),
+            duration = self.DurationText.get()
+        )
+        return result
 
     _lockShowFormat = False
 
@@ -174,10 +173,14 @@ class SlashCommandEditor(KeystoneEditFrame):
         options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
         options['defaultextension'] = "txt"
         options['multiple'] = False
-        filePath = filedialog.askopenfilename(**options)
+        topmost = SetTopmost(self, 0)
+        try:
+            filePath = filedialog.askopenfilename(**options)
+        finally:
+            SetTopmost(self, topmost)
         if (filePath != ''):
             self.TextEntry.SetText("\"%s\"" % (filePath))
-            TriggerOpenLinkedFileCallback(filePath)
+            self.SetDirty() 
 
     def OnNewButton(self):
         options = {}
@@ -187,15 +190,19 @@ class SlashCommandEditor(KeystoneEditFrame):
         options['title'] = "Create Keybind File"
         options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
         options['defaultextension'] = "txt"
-        filePath = filedialog.asksaveasfilename(**options)
+        topmost = SetTopmost(self, 0)
+        try:
+            filePath = filedialog.asksaveasfilename(**options)
+        finally:
+            SetTopmost(self, topmost)
         if (filePath != ''):
-            self.TextEntry.SetText("\"%s\"" % (filePath))        
+            self.TextEntry.SetText("\"%s\"" % (filePath))  
             file = open(filePath, "w+")
             try:
                 file.write("")
             finally:
                 file.close()
-            TriggerOpenLinkedFileCallback(filePath)
+            self.SetDirty()      
 
     def __init__(self, parent, command: SlashCommand):
         KeystoneEditFrame.__init__(self, parent)
@@ -235,9 +242,6 @@ class SlashCommandEditor(KeystoneEditFrame):
         #The text prompt for the last selected command, e.g. "power" for powexec_name
         self.TextPrompt = None
 
-        #SlashCommand class data model
-        self.Model = None
-
         #layout grid and frames
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=0)
@@ -271,7 +275,7 @@ class SlashCommandEditor(KeystoneEditFrame):
 
         label = KeystoneLabel(formatFrame, text="Repeat Mode", anchor='n')
         label.grid(row=0, column=0, pady="3")
-        repeatModes = [("Once", ""), ("Repeat [%s]" % command.REPEAT_STR, command.REPEAT_STR), ("Toggle [%s]" %command.TOGGLE_STR , command.TOGGLE_STR)]
+        repeatModes = [("Once", ""), ("Repeat [%s]" % REPEAT_STR, REPEAT_STR), ("Toggle [%s]" %TOGGLE_STR , TOGGLE_STR)]
         self.RepeatText = tk.StringVar()
         for idx, (text, mode) in enumerate(repeatModes):
             b = KeystoneRadio(formatFrame, text=text, value=mode, variable=self.RepeatText)
@@ -327,15 +331,3 @@ class SlashCommandEditor(KeystoneEditFrame):
 
         #bind to hide format and desc
         self.BindWidgetToShowFormat(self)
-
-        
-if (__name__ == "__main__"):
-    win = tk.Tk()
-    target = SlashCommand(repr="+say <color #000000><bgcolor #FFFFFF75><bordercolor #FF0000><scale 1.0><duration 10>Yay!")
-    editor = SlashCommandEditor(win, target)
-    s = ttk.Style()
-    s.configure('My.TFrame', background='red')
-    editor.configure(style="My.TFrame")
-    editor.pack(anchor='n', fill='both', expand=True, side='left')
-
-    tk.mainloop()

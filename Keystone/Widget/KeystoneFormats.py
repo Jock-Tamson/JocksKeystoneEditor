@@ -63,9 +63,17 @@ class KeystonePanedWindow(ttk.PanedWindow):
 
     def __init__(self, parent, *args, **kwargs):
         ttk.PanedWindow.__init__(self, parent, *args, **kwargs)
-        ttk.Style().configure('keystone.TPanedwindow', background=BACKGROUND)
-        ttk.Style().configure('keystone.TPanedwindow.Sash', background=BACKGROUND, bordercolor=BACKGROUND, lightcolor=FOREGROUND, sashrelief=tk.FLAT, sashthickness=2)
+        style = ttk.Style(self)
+        style.theme_use("winnative")
+        style.configure('keystone.TPanedwindow', background=FOREGROUND, sashwidth=1)
         self.configure(style='keystone.TPanedwindow')
+
+class KeystoneCheckbutton(ttk.Checkbutton):
+
+    def __init__(self, parent, *args, **kwargs):
+        ttk.Checkbutton.__init__(self, parent, *args, **kwargs)
+        ttk.Style().configure('keystone.TCheckbutton', background=BACKGROUND, foreground=FOREGROUND)
+        self.configure(style='keystone.TCheckbutton')
 
         
 class KeystonePromptFrame(KeystoneFrame):

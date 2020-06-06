@@ -18,7 +18,7 @@ class TestFrame(KeystoneEditFrame):
         self.Text.trace("w", self.SetDirty)
         self.Edit.pack(fill=tk.BOTH, expand=1)
 
-class TestFrameListView(unittest.TestCase):    
+class TestFrameListView(unittest.TestCase):      
 
     def test_FrameListView(self):
         win = tk.Tk()
@@ -26,11 +26,25 @@ class TestFrameListView(unittest.TestCase):
         args = ("1", "2", "3")
         view = FrameListView(win)
         view.Load(constructor, args, "X")
-        view.pack(anchor='n', fill=tk.BOTH, expand=True, side='left')  
+        view.pack(anchor='n', fill=tk.BOTH, expand=True, side='left')
 
         #tk.mainloop()
         win.destroy()
 
+    def test_FrameListViewSelectMode(self):
+        win = tk.Tk()
+        constructor = TestFrame
+        args = ("1", "2", "3")
+        view = FrameListView(win, selectMode = True)
+        view.Load(constructor, args, "X")
+        view.pack(anchor='n', fill=tk.BOTH, expand=True, side='left')
+
+        #tk.mainloop()
+        result = [p.Text.get() for p in view.GetSelected()]
+        print(result)
+        win.destroy()
+
+        
     def test_FrameListViewMoves(self):
         win = tk.Tk()
         constructor = TestFrame
