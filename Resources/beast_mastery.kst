@@ -1,35 +1,3 @@
 {"path": "C:\\keybinds.txt", 
-"description": "Sandophan's Numpad binds for Beast Mastery.\n
-from https://forums.homecomingservers.com/topic/6500-the-homecoming-of-sandolphans-mm-numpad-binds/ \n
-\n
-The Basics, how to use these binds\n
-\n 
-The active controls can be categorized by which row the key appears on on the numpad.\n
-\n 
-1-Row and 0 : Select what pet to command\n 
-\n  
-    0: All Pets\n  
-    1: "Minion" Pets\n  
-    2: "Lieutenant" Pets\n  
-    3: "Boss" Pet\n  
-\n   
-4-Row : Set stance\n  
-\n   
-    4: Agressive\n  
-    5: Defensive\n  
-    6: Passive\n  
-\n   
-7-Row : Issue command\n  
-\n   
-    7: Attack my target\n  
-    8: Follow Me\n  
-    9: Goto\n  
-\n   
-Other Keys: Summons and Upgrades\n  
-\n   
-    / : Summon "minion" pet\n  
-    * : Summon "Lieutenant" pet\n  
-    - : Summon "Boss" pet\n  
-    + : Equip (First Upgrade)\n  
-    Enter: Upgrade (Second Upgrade)\n ", 
+"description": "Sandophan's Numpad binds for Beast Mastery.\nfrom https://forums.homecomingservers.com/topic/6500-the-homecoming-of-sandolphans-mm-numpad-binds/ \n\nThe Basics, how to use these binds\n\n The active controls can be categorized by which row the key appears on on the numpad.\n\n 1-Row and 0 : Select what pet to command\n \n      0: All Pets\n      1: 'Minion' Pets\n      2: 'Lieutenant' Pets\n      3: 'Boss' Pet\n  \n   4-Row : Set stance\n  \n      4: Agressive\n      5: Defensive\n      6: Passive\n  \n   7-Row : Issue command\n  \n      7: Attack my target\n      8: Follow Me\n      9: Goto\n  \n   Other Keys: Summons and Upgrades\n  \n      / : Summon 'minion' pet\n      * : Summon 'Lieutenant' pet\n      - : Summon 'Boss' pet\n      + : Equip (First Upgrade)\n      Enter: Upgrade (Second Upgrade)\n ", 
 "root": "numpad0 \"bindloadfilesilent \"C:\\all.txt\"\"\nnumpad1 \"bindloadfilesilent \"C:\\Wolves.txt\"\"\nnumpad2 \"bindloadfilesilent \"C:\\Lions.txt\"\"\nnumpad3 \"bindloadfilesilent \"C:\\DireWolf.txt\"\"\ndivide \"powexec_location me summon wolves\"\nmultiply \"powexec_location me summon lions\"\nsubtract \"powexec_location me summon dire wolf\"\nadd \"powexec_name train beasts\"\nnumpadenter \"powexec_name tame beasts\"", "key_chains": [{"key": "NUMPAD0", "chord": "", "bound_files": [{"path": "C:\\all.txt", "repr": "numpad4 \"petcom_all aggressive\"\nnumpad5 \"petcom_all defensive\"\nnumpad6 \"petcom_all passive\"\nnumpad7 \"petcom_all attack\"\nnumpad8 \"petcom_all follow\"\nnumpad9 \"petcom_all goto\"\nlctrl+decimal \"petcom_all dismiss\""}]}, {"key": "NUMPAD1", "chord": "", "bound_files": [{"path": "C:\\Wolves.txt", "repr": "numpad4 \"petcom_pow wolves aggressive\"\nnumpad5 \"petcom_pow wolves defensive\"\nnumpad6 \"petcom_pow wolves passive\"\nnumpad7 \"petcom_pow wolves attack\"\nnumpad8 \"petcom_pow wolves follow\"\nnumpad9 \"petcom_pow wolves goto\"\nlctrl+decimal \"petcom_pow wolves dismiss\""}]}, {"key": "NUMPAD2", "chord": "", "bound_files": [{"path": "C:\\Lions.txt", "repr": "numpad4 \"petcom_pow lions aggressive\"\nnumpad5 \"petcom_pow lions defensive\"\nnumpad6 \"petcom_pow lions passive\"\nnumpad7 \"petcom_pow lions attack\"\nnumpad8 \"petcom_pow lions follow\"\nnumpad9 \"petcom_pow lions goto\"\nlctrl+decimal \"petcom_pow lions dismiss\""}]}, {"key": "NUMPAD3", "chord": "", "bound_files": [{"path": "C:\\DireWolf.txt", "repr": "numpad4 \"petcom_pow dire wolf aggressive\"\nnumpad5 \"petcom_pow dire wolf defensive\"\nnumpad6 \"petcom_pow dire wolf passive\"\nnumpad7 \"petcom_pow dire wolf attack\"\nnumpad8 \"petcom_pow dire wolf follow\"\nnumpad9 \"petcom_pow dire wolf goto\"\nlctrl+decimal \"petcom_pow dire wolf dismiss\""}]}]}
