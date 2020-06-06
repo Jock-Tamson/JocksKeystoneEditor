@@ -146,7 +146,9 @@ class BindFileEditorWindow(tk.Tk):
         options['title'] = "Select File Destination"
         options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
         options['defaultextension'] = "txt"
+        self.update()
         filePath = filedialog.asksaveasfilename(**options)
+        self.update()
         if (filePath == ''):
             return
         command = SlashCommand(name=SAVE_COMMAND, text="\"%s\"" % os.path.abspath(filePath))
@@ -220,7 +222,9 @@ class BindFileEditorWindow(tk.Tk):
         options['title'] = "Select File Destination"
         options['filetypes'] = (("Keybind Export Files", "*.kst"), ("All Files", "*.*"))
         options['defaultextension'] = "kst"
+        self.update()
         filePath = filedialog.asksaveasfilename(**options)
+        self.update()
         if (filePath == ''):
             return False
 
@@ -249,7 +253,9 @@ class BindFileEditorWindow(tk.Tk):
         options['filetypes'] = (("Keybind Export Files", "*.kst"), ("All Files", "*.*"))
         options['defaultextension'] = "kst"
         options['multiple'] = False
+        self.update()
         fileName = filedialog.askopenfilename(**options)
+        self.update()
         if (fileName == ''):
             return
 

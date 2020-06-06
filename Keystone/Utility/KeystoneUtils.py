@@ -5,6 +5,7 @@ import threading
 from tkinter import messagebox
 
 from Keystone.Reference.ColorDictionary import STANDARD_COLOR_DICTIONARY
+from Keystone.Reference.KeyNames import KEY_NAMES, CHORD_KEYS
 
 OpenLinkedFileCallback = None
 
@@ -166,15 +167,39 @@ def CompareKeybindStrings(val1, val2):
     else:
         return (match1 == match2)
 
+
+global QUICK_KEY_NAME_REF
+QUICK_KEY_NAME_REF = {}
 def MatchKeyName(compName, nameList)->[str, str, str]:
+
     matchName = NameForMatch(compName)
+
     if (matchName == None):
         return None
-    matches = [[name, alt_name, desc] for name, alt_name, desc in nameList if ((matchName == NameForMatch(name)) or (matchName == NameForMatch(alt_name)))]
-    if (len(matches) > 0):
-        return matches[0]
+
+    if (nameList == KEY_NAMES):
+        quickKey = "KEY_NAMES:" + matchName
+    elif (nameList == CHORD_KEYS):
+        quickKey = "CHORD_KEYS:" + matchName
     else:
-        return None
+        quickKey = None
+
+    if (quickKey != None):
+        idx = QUICK_KEY_NAME_REF.get(quickKey)
+        if (idx != None):
+            return nameList[idx]
+
+    for idx, entry in enumerate(nameList):
+        name = NameForMatch(entry[0])
+        if (name == matchName):
+            if (quickKey != None):
+                QUICK_KEY_NAME_REF[quickKey] = idx
+            return entry
+        altName = NameForMatch(entry[1])
+        if (altName == matchName):
+            if (quickKey != None):
+                QUICK_KEY_NAME_REF[quickKey] = idx
+            return entry
 
 def FormatKeyWithChord(key, chord): 
     if (chord == ""):

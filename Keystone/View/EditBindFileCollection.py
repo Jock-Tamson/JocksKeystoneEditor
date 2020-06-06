@@ -116,7 +116,9 @@ class EditBindFileCollection(KeystoneEditFrame):
             options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
             options['defaultextension'] = "txt"
             options['multiple'] = False
+            self.master.update()
             fileName = filedialog.askopenfilename(**options)
+            self.master.update()
 
         if (fileName != ''):
             self.Reset()
@@ -136,7 +138,9 @@ class EditBindFileCollection(KeystoneEditFrame):
             options['title'] = "Save Keybind File As"
             options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
             options['defaultextension'] = "txt"
+            self.master.update()
             filePath = filedialog.asksaveasfilename(**options)
+            self.master.update()
             if (filePath == ''):
                 return
         else:
@@ -170,7 +174,9 @@ class EditBindFileCollection(KeystoneEditFrame):
             options['title'] = "Select Target Destination for Linked Files"
             options['filetypes'] = (("Keybind Files", "*.txt"), ("All Files", "*.*"))
             options['defaultextension'] = "txt"
+            self.master.update()
             pointPath = filedialog.asksaveasfilename(**options)
+            self.master.update()
             if (pointPath == ''):
                 return False          
             self.FilePath = pointPath
