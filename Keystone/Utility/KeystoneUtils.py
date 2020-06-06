@@ -1,3 +1,4 @@
+import inspect
 import os
 import sys
 import threading
@@ -181,3 +182,17 @@ def FormatKeyWithChord(key, chord):
     else:
         result = "%s+%s" % (chord, key)
     return result
+
+def SetTopmost(widget, value):
+
+    win = widget
+    was = None
+    while (win != None):
+        bases = [b.__name__ for b in inspect.getmro(win.__class__)]
+        if ('Toplevel' in bases):
+            break
+        win = win.master
+    if (win != None):
+        was = win.attributes("-topmost")
+        win.attributes("-topmost",  value)
+    return was

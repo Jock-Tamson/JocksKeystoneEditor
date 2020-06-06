@@ -306,6 +306,7 @@ class EditBindWindow(tk.Toplevel):
     def __init__(self, parent, resultCallback, bind: Bind = None, lockKey = False, title = None, dirty = False):
 
         tk.Toplevel.__init__(self, parent)
+        self.attributes("-topmost", 1)
 
         if (title == None):
             if (bind == None):

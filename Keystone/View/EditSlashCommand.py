@@ -6,7 +6,7 @@ from tkinter.colorchooser import askcolor
 from Keystone.Model.SlashCommand import IsLoadFileCommand, REPEAT_STR, SlashCommand, TOGGLE_STR
 from Keystone.Reference.CommandReference import LIST_OF_SLASH_COMMANDS
 from Keystone.Utility.KeystoneUtils import (AverageRGBValues, CompareKeybindStrings, GetFileName,
-                                            RemoveOuterQuotes)
+                                            RemoveOuterQuotes, SetTopmost)
 from Keystone.Widget.ColorPicker import ColorPicker
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
 from Keystone.Widget.KeystoneFormats import (FONT_SIZE, TEXT_FONT,
@@ -173,7 +173,11 @@ class SlashCommandEditor(KeystoneEditFrame):
         options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
         options['defaultextension'] = "txt"
         options['multiple'] = False
-        filePath = filedialog.askopenfilename(**options)
+        topmost = SetTopmost(self, 0)
+        try:
+            filePath = filedialog.askopenfilename(**options)
+        finally:
+            SetTopmost(self, topmost)
         if (filePath != ''):
             self.TextEntry.SetText("\"%s\"" % (filePath))
             self.SetDirty() 
@@ -186,7 +190,11 @@ class SlashCommandEditor(KeystoneEditFrame):
         options['title'] = "Create Keybind File"
         options['filetypes'] = (("Text Files", "*.txt"), ("All Files", "*.*"))
         options['defaultextension'] = "txt"
-        filePath = filedialog.asksaveasfilename(**options)
+        topmost = SetTopmost(self, 0)
+        try:
+            filePath = filedialog.asksaveasfilename(**options)
+        finally:
+            SetTopmost(self, topmost)
         if (filePath != ''):
             self.TextEntry.SetText("\"%s\"" % (filePath))  
             file = open(filePath, "w+")

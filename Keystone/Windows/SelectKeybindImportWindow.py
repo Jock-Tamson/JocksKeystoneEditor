@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from Keystone.Model.BindFileCollection import DESCRIPTION
-from Keystone.Utility.KeystoneUtils import GetResourcePath
+from Keystone.Utility.KeystoneUtils import GetResourcePath, SetTopmost
 from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame, KeystoneLabel, TEXT_FONT, LARGE_FONT_SIZE
 from Keystone.Widget.KeystoneMoreLabel import KeystoneMoreLabel
 from Keystone.Widget.ScrollingFrame import ScrollingFrame
@@ -16,13 +16,18 @@ class SelectKeybindImportWindow(tk.Toplevel):
     def OnImportCallback(self, fileName, *args):
         if (self.ImportCallback != None):
             filePath = os.path.join(self.ResourceDir, fileName)
-            self.ImportCallback(self, filePath)
+            SetTopmost(self, 0)
+            try:
+                self.ImportCallback(self, filePath)
+            finally:
+                SetTopmost(self, 1)
 
     def __init__(self, parent, resourceDir = None, importCallback = None, *args, **kwargs):
 
         tk.Toplevel.__init__(self, parent, *args, **kwargs)
         self.maxsize(900, 700)
         self.attributes("-toolwindow", 1)
+        self.attributes("-topmost", 1)
 
         icon = GetResourcePath('.\\Resources\\keystone.ico')
         if (icon != None):

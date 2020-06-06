@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import ttk
 
 from Keystone.Utility.KeystoneUtils import AverageRGBValues
 from Keystone.Widget.KeystoneFormats import FONT_SIZE, TEXT_FONT

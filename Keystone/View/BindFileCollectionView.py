@@ -1,7 +1,7 @@
 import os as os
 import threading
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import ttk
 
 from Keystone.Model.BindFileCollection import NEW_FILE, BindFileCollection, GetKeyChains, KEY_CHAINS, ROOT
 from Keystone.Model.Keychain import Keychain, BOUND_FILES, NONE, KEY, CHORD, PATH, REPR
