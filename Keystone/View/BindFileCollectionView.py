@@ -72,8 +72,27 @@ class BindFileCollectionView(KeystoneFrame):
             self.Tree.AddTag(item, EDITED_TAG)
         else:
             self.Tree.RemoveTag(item, EDITED_TAG)
-        fileTag = self.Tree.GetTags(item)[1]
-        self.CommitRepr(fileTag)
+        fileTags = [self.Tree.GetTags(item)[1]]
+
+        chainIndex, fileIndex = self.ParseFileTag(fileTags[0])
+        if (chainIndex >= 0):
+            #check for other instances of same path
+            path = ComparableFilePath(self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][PATH])
+            for c, chain in enumerate(self.Dictionary[KEY_CHAINS]):
+                if (chain[BOUND_FILES] == NONE):
+                    continue
+                for f, boundFile in enumerate(chain[BOUND_FILES]):
+                    siblingPath = ComparableFilePath(boundFile[PATH])
+                    if (path == siblingPath):
+                        siblingTag = self.BuildFileTag(c, f)
+                        fileTags.append(siblingTag)
+                        siblingItem = self.GetItem(siblingTag)
+                        if value:
+                            self.Tree.AddTag(siblingItem, EDITED_TAG)
+                        else:
+                            self.Tree.RemoveTag(siblingItem, EDITED_TAG)
+
+        self.CommitRepr(fileTags)
 
     def GetEditor(self, fileTag):
         chainIndex, fileIndex = self.ParseFileTag(fileTag)
@@ -127,23 +146,32 @@ class BindFileCollectionView(KeystoneFrame):
         self.Tree.selection_set(children[0])
         self.Tree.focus(children[0])
 
-    def CommitRepr(self, fileTag):
-        editor = self.GetEditor(fileTag)
-        bindFile = editor.Get()
+    def CommitRepr(self, fileTags):
+        editor = self.GetEditor(fileTags[0])
         if (editor == None):
             return
-        chainIndex, fileIndex = self.ParseFileTag(fileTag)
-        if (chainIndex < 0):
-            oldRepr = self.Dictionary[ROOT]
-            self.Dictionary[ROOT] = bindFile.__repr__()
-        else:
-            oldRepr = self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][REPR]
-            self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][REPR] = bindFile.__repr__()
-        
-        #check for change in links
-        oldBindFile = BindFile(repr=oldRepr)
-        if (str(bindFile.GetLoadedFilePaths()) != str(oldBindFile.GetLoadedFilePaths())):
-            self._updateTree(chainIndex)
+        bindFile = editor.Get()
+
+        updateTree = False
+        for fileTag in fileTags:
+            chainIndex, fileIndex = self.ParseFileTag(fileTag)
+            if (chainIndex < 0):
+                oldRepr = self.Dictionary[ROOT]
+                self.Dictionary[ROOT] = bindFile.__repr__()
+            else:
+                oldRepr = self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][REPR]           
+                self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][REPR] = bindFile.__repr__()
+            
+            self.SetEditor(fileTag, editor)
+            
+            if (not updateTree):        
+                #check for change in links
+                oldBindFile = BindFile(repr=oldRepr)
+                if (str(bindFile.GetLoadedFilePaths()) != str(oldBindFile.GetLoadedFilePaths())):
+                    updateTree = True
+
+        if (updateTree):
+            self._updateTree()
 
     def GetOrphanage(self, create = False, orphans = NONE):
         result = None
@@ -166,7 +194,7 @@ class BindFileCollectionView(KeystoneFrame):
         return result
 
 
-    def _updateTree(self, chainIndex):
+    def _updateTree(self):
         
         orphans = []
         orphanage = self.GetOrphanage()
