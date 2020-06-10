@@ -52,6 +52,9 @@ class BindFileEditorWindow(tk.Tk):
                 editor = self.Notebook.SelectedFrame()
                 if (mode == "open"):
                     editor.Open(fileName = path)
+                    if (editor.FilePath == None):
+                        self.Notebook.RemoveSelectedFrame()
+                        return
                 elif (mode == "new"):
                     editor.New(defaults=False)
                     if (bindFile != None):
