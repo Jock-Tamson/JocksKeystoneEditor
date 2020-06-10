@@ -163,7 +163,7 @@ class BindFileCollectionView(KeystoneFrame):
                 self.Dictionary[KEY_CHAINS][chainIndex][BOUND_FILES][fileIndex][REPR] = bindFile.__repr__()
             
             self.SetEditor(fileTag, editor)
-            
+
             if (not updateTree):        
                 #check for change in links
                 oldBindFile = BindFile(repr=oldRepr)
@@ -207,6 +207,13 @@ class BindFileCollectionView(KeystoneFrame):
                 orphans.append(orphan)
             self.Dictionary[KEY_CHAINS].remove(orphanage) #to remove or replace at end
 
+        #intake of orphans that rejects twins
+        def AddToOrphanage(orphan):
+            path = ComparableFilePath(orphan[PATH])
+            twins = [p for p in orphans if (path == ComparableFilePath(p[PATH]))]
+            if (len(twins) == 0):
+                orphans.append(orphan)
+
         addedChains = []
         removedChains = []
         modifiedChains = []
@@ -219,7 +226,7 @@ class BindFileCollectionView(KeystoneFrame):
             for removedChain in self.Dictionary[KEY_CHAINS]:
                 removedChains.append(removedChain)
                 for oldFile in removedChain[BOUND_FILES]:
-                    orphans.append(oldFile)
+                    AddToOrphanage(oldFile)
         elif (self.Dictionary[KEY_CHAINS] == NONE):
             #chains added
             self.Dictionary[KEY_CHAINS] = []
@@ -233,7 +240,7 @@ class BindFileCollectionView(KeystoneFrame):
                 if (len(match) == 0):
                     removedChains.append(oldChain)
                     for oldFile in oldChain[BOUND_FILES]:
-                        orphans.append(oldFile)
+                        AddToOrphanage(oldFile)
 
             #were chains added or modified?
             for newChain in newDictionary[KEY_CHAINS]:
@@ -253,7 +260,7 @@ class BindFileCollectionView(KeystoneFrame):
                     newFile = [p for p in newChain[BOUND_FILES] if (ComparableFilePath(p[PATH]) == ComparableFilePath(oldFile[PATH]))]
                     if (len(newFile) == 0):
                         removedFiles.append(oldFile)
-                        orphans.append(oldFile)
+                        AddToOrphanage(oldFile)
 
                 if ((len(addedFiles) == 0) and (len(removedFiles) == 0)):
                     continue
@@ -268,28 +275,41 @@ class BindFileCollectionView(KeystoneFrame):
                 return
             
         adoptedOrphans = []
+
+        def CheckForOlivers(orphan):
+            olivers = [] #orphans that have a home if you just look
+            path = ComparableFilePath(orphan[PATH])
+            for chain in self.Dictionary[KEY_CHAINS]:
+                twins = [p for p in chain[BOUND_FILES] if (path == ComparableFilePath(p[PATH]))]
+                if (len(twins) > 0):
+                    olivers.append(twins[0])
+            return olivers
+
         def adoptionProcess(newFile):
             result = newFile
+            olivers = CheckForOlivers(newFile)
             adoptees = [p for p in orphans if (ComparableFilePath(p[PATH]) == ComparableFilePath(newFile[PATH]))]
             custodyBattles = [p for p in adoptedOrphans if (ComparableFilePath(p[PATH]) == ComparableFilePath(newFile[PATH]))]
-            if (len(adoptees) > 0):
+            if (len(olivers) > 0):
+                result = olivers[0]
+            elif (len(adoptees) > 0):
                 result = adoptees[0]
                 adoptedOrphans.append(adoptees[0])
                 for orphan in adoptees:
                     orphans.remove(orphan)
             elif (len(custodyBattles) > 0):
                 result = custodyBattles[0]
-            return result
-            
-            
+            return result        
 
         if (len(addedChains) > 0):
             for addedChain in addedChains:
             #append new chain at end
                 addedChain[EDITOR] = None
                 addedChain[SELECTED_TAG] = False
+                boundFiles = []
                 for newFile in  addedChain[BOUND_FILES]:
-                    newFile = adoptionProcess(newFile)
+                    boundFiles.append(adoptionProcess(newFile))
+                addedChain[BOUND_FILES] = boundFiles
                 self.Dictionary[KEY_CHAINS].append(addedChain)
 
         if (len(removedChains) > 0):
@@ -306,6 +326,14 @@ class BindFileCollectionView(KeystoneFrame):
                 for newFile in addedFiles:
                     newFile = adoptionProcess(newFile)
                     modifiedChain[BOUND_FILES].append(newFile)
+
+        if (len(orphans) != 0):
+            olivers = []
+            for orphan in orphans:
+                if (len(CheckForOlivers(orphan)) > 0):
+                    olivers.append(orphan)
+            for orphan in olivers:
+                orphans.remove(orphan)
 
         if (len(orphans) != 0):
             orphanage = self.GetOrphanage(True, orphans)
