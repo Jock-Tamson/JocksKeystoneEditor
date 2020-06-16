@@ -140,10 +140,10 @@ class FrameListViewItem(KeystoneFrame):
         self.Item = constructor(self, *args, **kwargs)
         self.Item.grid(column=1, row=1, sticky='nsew')
 
-        #bind mouse controls
-        self.MouseOver = False
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_leave)
+        #bind focus controls
+        self.Focused = False
+        self.bind("<FocusIn>", self._on_enter)
+        self.bind("<FocusOut>", self._on_leave)
 
         #bind Dirty if available
         if isinstance(self.Item, KeystoneEditFrame):
@@ -152,14 +152,14 @@ class FrameListViewItem(KeystoneFrame):
         self.OnShowControls()
 
     def _on_enter(self, event):
-        self.MouseOver = True
+        self.Focused = True
         if (not self.SelectMode.get()):
-            show = self.Parent.ShowControlsOnMouseOver.get() or self.Parent.ShowControls.get()
+            show = self.Parent.ShowControlsOnFocus.get() or self.Parent.ShowControls.get()
             if (self.ShowControls.get() != show):
                 self.ShowControls.set(show)
 
     def _on_leave(self, event):
-        self.MouseOver = False
+        self.Focused = False
         if (not self.SelectMode.get()):
             show = self.Parent.ShowControls.get()
             if (self.ShowControls.get() != show):
@@ -168,7 +168,7 @@ class FrameListViewItem(KeystoneFrame):
 
 class FrameListView(KeystoneEditFrame):
 
-    def __init__(self, parent, showControls = False, showControlsOnMouseOver = True, selectMode = False):
+    def __init__(self, parent, showControls = False, showControlsOnFocus = True, selectMode = False):
         KeystoneEditFrame.__init__(self, parent)
 
         self.MovingObject = None
@@ -190,8 +190,8 @@ class FrameListView(KeystoneEditFrame):
         self.ShowControls.set(showControls)
         self.ShowControls.trace("w", self.OnShowControls)
 
-        self.ShowControlsOnMouseOver = tk.BooleanVar()
-        self.ShowControlsOnMouseOver.set(showControlsOnMouseOver)
+        self.ShowControlsOnFocus = tk.BooleanVar()
+        self.ShowControlsOnFocus.set(showControlsOnFocus)
 
         self.SelectMode = tk.BooleanVar()
         self.SelectMode.set(selectMode)
@@ -417,28 +417,3 @@ class FrameListView(KeystoneEditFrame):
                 self._gridItem(self.Items[idx], idx)
 
         self.SetDirty()
-
-
-
-        
-class TestFrame(KeystoneEditFrame):
-
-    def __init__(self, parent, message):
-        KeystoneEditFrame.__init__(self, parent)
-        self.Text = tk.StringVar()
-        self.Text.set(message)
-        self.Edit = ttk.Entry(self, textvariable=self.Text)
-        self.Text.trace("w", self.SetDirty)
-        self.Edit.pack(fill=tk.BOTH, expand=1)
-
-
-
-if (__name__ == "__main__"):
-    win = tk.Tk()
-    constructor = TestFrame
-    args = ("1", "2", "3")
-    view = FrameListView(win)
-    view.Load(constructor, args, "X")
-    view.pack(anchor='n', fill=tk.BOTH, expand=True, side='left')
-
-    tk.mainloop()
