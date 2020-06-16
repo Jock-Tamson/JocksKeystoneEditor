@@ -400,7 +400,7 @@ class EditBindFile(KeystoneEditFrame):
         scrollingFrame = ScrollingFrame(self)
         scrollingFrame.grid(row=1, column=0, columnspan=5, sticky='nsew')
 
-        self.view = FrameListView(scrollingFrame.scrollwindow, showControlsOnMouseOver=(list))
+        self.view = FrameListView(scrollingFrame.scrollwindow, showControlsOnFocus=(list))
         self.view.pack(fill=tk.BOTH, expand=1)
         self.view.OnSetDirty.append(self.SetDirty)
 
