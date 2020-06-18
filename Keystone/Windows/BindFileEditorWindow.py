@@ -14,6 +14,7 @@ from Keystone.Utility.KeystoneUtils import (ComparableFilePath, GetFileName, Get
                                             SetOpenLinkedFileCallback)
 from Keystone.View.EditBindFileCollection import EditBindFileCollection
 from Keystone.View.BindFileCollectionView import EDITOR
+from Keystone.View.EditMacro import EditMacroWindow
 from Keystone.Widget.FrameNotebook import FrameNotebook
 from Keystone.Widget.KeystoneEditFrame import KeystoneEditFrame
 from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame
@@ -279,6 +280,9 @@ class BindFileEditorWindow(tk.Tk):
         editor.OnSelectCallback = self._onSelectCallback
         editor.SetSelectMode(not editor.SelectMode)
 
+    def OnCreateMacro(self):
+        EditMacroWindow(self)
+
     def OnPredefinedBindsCallback(self, importWindow, filePath):
         collectionEditor = self.Notebook.SelectedFrame()
         if (collectionEditor == None):
@@ -334,6 +338,7 @@ class BindFileEditorWindow(tk.Tk):
         cohMenu = tk.Menu(menu, tearoff = 0)
         cohMenu.add_command(label="Download File", command=self.OnDownloadFile)
         cohMenu.add_command(label="Upload File", command=self.OnUploadFile)
+        cohMenu.add_command(label="Create Macro", command=self.OnCreateMacro)
         menu.add_cascade(label="Game Commands", menu=cohMenu)
 
         importExportMenu = tk.Menu(menu, tearoff = 0)
