@@ -104,6 +104,9 @@ WALKTHROUGH = [
     "This let's us use a power by name.  Me, I keep Hurl Boulder bound to the B key\n\n" +
     "Not that I will be hurling a boulder at you.\n"+
     "Because of the reform and everything.\n\n" +
+    "Maybe you want to create just a macro button instead of all this keybind business?\n" +
+    "Checkout Create Macro in the Game Commands window.\n" +
+    "It works like this but lets you copy a macro command like we did the file download\n\n" +
     "Go on and add a bind if you want, and then I want to show you a special one next.",
 
     "Ready?  Go to the Import/Export menu and select Add Upload Bind.\n"
