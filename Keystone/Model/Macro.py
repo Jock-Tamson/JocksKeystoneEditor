@@ -4,7 +4,7 @@ from Keystone.Model.SlashCommand import SlashCommand
 class Macro():
 
 
-    def __init__(self, name: str = "", commands: [SlashCommand] = None):
+    def __init__(self, name: str = None, commands: [SlashCommand] = None):
 
         #Name of Macro
         self.Name = name
@@ -14,4 +14,7 @@ class Macro():
 
     def __repr__(self):
         commands = COMMAND_SEPARATOR.join([str(p) for p in self.Commands])
-        return "/macro %s \"%s\"" % (self.Name, commands)
+        if ((self.Name == None) or (self.Name == "")):
+            return "/%s" % (commands)
+        else:
+            return "/macro %s \"%s\"" % (self.Name, commands)

@@ -716,6 +716,8 @@ class TestMacro(unittest.TestCase):
         name = "Test"
         target = Macro(name, commands)
         self.assertEqual(target.__repr__(), "/macro Test \"say Yay!$$say It works!\"")
+        target = Macro(name=None, commands=[SlashCommand(repr="say Yay!")])
+        self.assertEqual(target.__repr__(), "/say Yay!")
 
 if __name__ == "__main__":
     unittest.main()

@@ -8,7 +8,7 @@ from Keystone.Reference.DefaultKeyBindings import DEFAULT_COMMAND
 from Keystone.Utility.KeystoneUtils import GetResourcePath
 from Keystone.View.EditSlashCommand import SlashCommandEditor
 from Keystone.Widget.FrameListView import FrameListView
-from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneFrame, KeystoneLabel, KeystoneEntry
+from Keystone.Widget.KeystoneFormats import KeystoneButton, KeystoneCheckbutton, KeystoneFrame, KeystoneLabel, KeystoneEntry
 
 class EditMacro(KeystoneFrame):
 
@@ -18,7 +18,10 @@ class EditMacro(KeystoneFrame):
 
     def Get(self) -> Macro:
         commands = [item.Item.Get() for item in self.Commands.Items]
-        name = self.Name.get()
+        if (self.CommandOnly.get()):
+            name = None
+        else:
+            name = self.Name.get()
         return Macro(name, commands)
     
     def __init__(self, parent, macro: Macro):
@@ -56,6 +59,12 @@ class EditMacro(KeystoneFrame):
         self.Name = tk.StringVar()
         self.NameBox = KeystoneEntry(self.NameFrame, textvariable=self.Name)
         self.NameBox.grid(row=1, column=1, sticky="nsew", padx="3", pady="3")
+
+        self.CommandOnly = tk.BooleanVar(value=False)
+        self.CommandOnlyCheck = KeystoneCheckbutton(self.NameFrame, variable=self.CommandOnly)
+        self.CommandOnlyCheck.grid(row=2, column=0, sticky="ne", padx="3", pady="3")
+        commandOnlyLabel = KeystoneLabel(self.NameFrame, anchor='nw', text='Copy command only')
+        commandOnlyLabel.grid(row=2, column=1, sticky="nw", padx="3", pady="3")
         
         self.Load(macro)
 
