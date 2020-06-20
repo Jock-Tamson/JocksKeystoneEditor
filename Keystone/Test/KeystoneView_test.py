@@ -18,6 +18,7 @@ from Keystone.View.EditBind import EditBindWindow
 from Keystone.View.EditBindFile import EditBindFile
 from Keystone.View.BindFileCollectionView import BindFileCollectionView
 from Keystone.View.EditBindFileCollection import EditBindFileCollection
+from Keystone.View.EditMacro import EditMacroWindow
 from Keystone.Windows.KeystoneWalkthroughPages import ShowWalkthrough
 from Keystone.Windows.BindFileEditorWindow import BindFileEditorWindow
 from Keystone.Windows.KeystoneAbout import ShowHelpAbout
@@ -193,6 +194,16 @@ class TestSelectKeybindImportWindow(unittest.TestCase):
             ShowSelectKeybindImportWindow(win, importCallback=callback)
 
             tk.mainloop()
+
+class TestEditMacroWindow(unittest.TestCase):
+
+    def test_EditMacroWindow(self):
+        win = tk.Tk()
+        editor = EditMacroWindow(win)
+        if SET_TO_SHOW_WINDOWS:
+            tk.mainloop()
+        else:
+            editor.OnClose()
 
 if __name__ == "__main__":
     unittest.main()

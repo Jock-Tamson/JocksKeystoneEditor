@@ -7,6 +7,7 @@ from Keystone.Model.BindFile import (BindFile, GetDefaultBindForKey,
                                      ReadBindsFromFile)
 from Keystone.Model.BindFileCollection import BindFileCollection, GetKeyChains
 from Keystone.Model.Keychain import Keychain
+from Keystone.Model.Macro import Macro
 from Keystone.Model.SlashCommand import SlashCommand
 from Keystone.Reference.KeyNames import CHORD_KEYS, KEY_NAMES
 from Keystone.Utility.KeystoneUtils import (AverageRGBValues, GetFileName,
@@ -708,8 +709,15 @@ class TestKeychain(unittest.TestCase):
         actual = target.__repr__()
         self.assertEqual(actual, expected2)
 
+class TestMacro(unittest.TestCase):
 
-
+    def test_Macro(self):
+        commands = [SlashCommand(repr="say Yay!"), SlashCommand(repr="say It works!")]
+        name = "Test"
+        target = Macro(name, commands)
+        self.assertEqual(target.__repr__(), "/macro Test \"say Yay!$$say It works!\"")
+        target = Macro(name=None, commands=[SlashCommand(repr="say Yay!")])
+        self.assertEqual(target.__repr__(), "/say Yay!")
 
 if __name__ == "__main__":
     unittest.main()

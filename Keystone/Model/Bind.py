@@ -3,11 +3,12 @@ from Keystone.Reference.KeyNames import CHORD_KEYS, KEY_NAMES
 from Keystone.Utility.KeystoneUtils import FormatKeyWithChord, MatchKeyName, RemoveOuterQuotes
     
 UNBOUND = "UNBOUND"
+COMMAND_SEPARATOR = "$$"
 
 #object for a keybind of 1 or more commands
 class Bind():
 
-    COMMAND_SEPARATOR = "$$"
+    THIS_COMMAND_SEPARATOR = COMMAND_SEPARATOR
     PADDED_COMMAND_SEPARATOR = "%s " % COMMAND_SEPARATOR
 
     #Parse key and command list from representative string
@@ -30,9 +31,9 @@ class Bind():
             self.Commands = None
         else:
             #split on command separator and send parts to SlashCommand init
-            parts = [p.lstrip() for p in commands.split(self.COMMAND_SEPARATOR)]
+            parts = [p.lstrip() for p in commands.split(self.THIS_COMMAND_SEPARATOR)]
             if (commands.__contains__(self.PADDED_COMMAND_SEPARATOR)):
-                self.COMMAND_SEPARATOR = self.PADDED_COMMAND_SEPARATOR
+                self.THIS_COMMAND_SEPARATOR = self.PADDED_COMMAND_SEPARATOR
             self.Commands = [SlashCommand(repr = p) for p in parts]
 
 
@@ -107,7 +108,7 @@ class Bind():
         if (self.Commands == None):
             return UNBOUND
         else:
-            commands = self.COMMAND_SEPARATOR.join([str(p) for p in self.Commands])
+            commands = self.THIS_COMMAND_SEPARATOR.join([str(p) for p in self.Commands])
             return "\"%s\"" % (commands)
 
     def __repr__(self):
