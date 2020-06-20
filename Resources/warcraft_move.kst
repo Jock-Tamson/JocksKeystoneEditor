@@ -1,0 +1,1 @@
+{"path": "<New File>", "description": "Swaps the turn and strafe keys in the style of another popular MMO.\nTo restore the default move keys:\nEdit Q, E, A, and D binds.\nSelect Unbind.\nSelect Default Bind.", "root": "A \"+turnleft\"\nD \"+turnright\"\nE \"+right\"\nQ \"+left\"", "key_chains": "none"}
