@@ -209,12 +209,22 @@ class BindFileEditorWindow(tk.Tk):
         if (self.Notebook.Dirty == True):
             response = messagebox.askyesnocancel("Edited Files", "Save all changes before closing?")
             if (response):
-                if (self.Notebook.Items != None):        
-                    for editor in self.Notebook.Items:
-                        editor.Save()
+                self.OnSaveAll()
             elif(response == None):
                 return
         self.destroy()
+        
+    def OnSaveAll(self):
+        if (self.Notebook.Dirty == True):
+            if (self.Notebook.Items != None):        
+                for editor in self.Notebook.Items:
+                    if editor.Dirty.get():
+                        editor.Save()
+
+    def OnCloseAll(self):
+        while ((self.Notebook.Items != None) and (len(self.Notebook.Items) > 0)):
+            self.CancelFromSavePrompt()
+            self.Notebook.RemoveSelectedFrame()
 
     def _getBoundFilesSource(self):
         return [e.Get() for e in self.Notebook.Items if e.FilePath != None]
@@ -332,7 +342,9 @@ class BindFileEditorWindow(tk.Tk):
         self.AddCommand(menu=fileMenu, frame=speedBar, label="New (Defaults)", command=self.OnFileNewDefaults)
         self.AddCommand(menu=fileMenu, frame=speedBar, label="Save", command=self.OnFileSave)
         self.AddCommand(menu=fileMenu, frame=speedBar, label="Save As...", command=self.OnFileSaveAs)
+        fileMenu.add_command(label="Save All", command=self.OnSaveAll)
         self.AddCommand(menu=fileMenu, frame=speedBar, label="Close", command=self.OnFileClose)
+        fileMenu.add_command(label="Close All", command=self.OnCloseAll)
         menu.add_cascade(label="File", menu=fileMenu)
 
         cohMenu = tk.Menu(menu, tearoff = 0)
